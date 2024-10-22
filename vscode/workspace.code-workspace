@@ -1,0 +1,27 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../../AppData/Roaming/Python/Python311/site-packages/pymel"
+		},
+		{
+			"path": "../../../../../../Program Files/Autodesk/Maya2024/plug-ins/camd/scripts"
+		},
+		{
+			"path": "../../../BDP/shapes/SHAPES/SHAPES/modules/SHAPES/scripts"
+		},
+		{
+			"path": "../../../BDP/cha/SHAPES_transfer"
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"cSpell.words": [
+			"rigbdp",
+			"skincluster",
+			"skinclusters",
+			"TESTBUILD"
+		]
+	}
+}

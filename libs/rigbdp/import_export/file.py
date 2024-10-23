@@ -505,6 +505,7 @@ def recursive_print_directory_map(root_folder, indent="", num_padding=4, back_nu
         print(f"Error: The directory '{root_folder}' does not exist.")
         return
 
+
     line = '─' * num_padding
     back_line = '─' * back_num_padding
     space = ' ' * num_padding
@@ -825,7 +826,11 @@ def copy_files_with_newer_timestamps(source_dir, destination_dir):
 # destination_directory = 'path/to/destination/directory'
 # copy_files_with_newer_timestamps(source_directory, destination_directory)
 ######################################################################################
+module_path = os.path.dirname(os.path.realpath(__file__))
 
+# source_directory = r'../../../../'
+# destination_directory = r'C:\Users\harri\Desktop\libs_copy_path_test'
+# copy_files_with_newer_timestamps(source_directory, destination_directory)
 
 r"""
 #!/bin/bash

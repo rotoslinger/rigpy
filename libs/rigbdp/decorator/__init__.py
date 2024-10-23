@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 from functools import wraps
 
-def restore_selection(func):
+def sel_restore(func):
     """
     A decorator to save the current selection, run a function, and restore the selection afterward.
     """

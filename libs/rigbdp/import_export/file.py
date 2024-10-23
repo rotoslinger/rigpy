@@ -7,9 +7,9 @@ from functools import wraps
 from maya import cmds
 
 # custom
-import decorator
+import arpdecorator
 
-importlib.reload(decorator)
+importlib.reload(arpdecorator)
 
 DELIMITER = os.path.sep  # more self explanatory for people not familiar with builtin path handling
 

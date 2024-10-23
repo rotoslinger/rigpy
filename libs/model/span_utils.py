@@ -1,11 +1,11 @@
 import importlib
 import maya.cmds as cmds
-import decorator
-importlib.reload(decorator)
+import arpdecorator
+importlib.reload(arpdecorator)
 
 ##################   simplify_edges    ################################
 #TODO add even spacing option
-@decorator.undo_chunk
+@arpdecorator.undo_chunk
 def edge_bez_tool(even_spacing=True, select_all=False, select_handles=False, redo=False):
     #get selection
     selection = cmds.ls(sl=True, fl=True);    
@@ -64,7 +64,7 @@ def edge_bez_tool(even_spacing=True, select_all=False, select_handles=False, red
 
 
 ################## select_bez_tools ################################
-@decorator.undo_chunk
+@arpdecorator.undo_chunk
 def select_bez_tools():
     num_bez_tools= len(cmds.ls( 'EdgeBezierTool*', exactType="transform", s=False))
     counter_suffix= "{0:02d}".format(num_bez_tools)
@@ -81,7 +81,7 @@ def select_bez_tools():
 
 
 ################## selectCVTool #################################
-@decorator.undo_chunk
+@arpdecorator.undo_chunk
 def select_cv_tool():
     all_target_curves = cmds.ls(sl=True)
     cmds.select(all_target_curves, r=True)
@@ -93,7 +93,7 @@ def select_cv_tool():
 
 
 ################## cleanupBezTools #################################
-@decorator.undo_chunk
+@arpdecorator.undo_chunk
 def cleanup_bez_tools():
     #geo_to_cleanup = cmds.ls(sl=True, type="transform")
     geo_to_cleanup = cmds.ls(sl=True, type="transform", long=True)
@@ -111,7 +111,7 @@ def cleanup_bez_tools():
 
 
 ################## equal_spacing_edges #################################
-@decorator.undo_chunk
+@arpdecorator.undo_chunk
 def even_space_edges():
     cmds.undoInfo(openChunk=True)  # Start undo chunk
     try:

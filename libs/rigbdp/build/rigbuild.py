@@ -1,4 +1,4 @@
-import os, importlib
+import os, importlib, shutil
 from maya import cmds, mel
 from rigbdp.import_export import file as file_utils
 from rigbdp.import_export import mayafile
@@ -54,6 +54,7 @@ class RigBuilder:
 
         # If the file already exists and self.backup is True, back it up
         if self.backup:
+            print(f'BUILD OUTPUT DIR : {self.build_output_dir}')
             output_dir_back, backed_up_files = file_utils.backup_rig_build(self.build_output_dir, backup_dir_name="BAK")
 
             #file_utils.backup_files_in_dir(path=self.build_output_dir)
@@ -73,11 +74,19 @@ class RigBuilder:
         self.data_dirs = file_utils.all_files_in_path_except(self.data_dir)
         for data_dir in self.data_dirs:
             head, tail = os.path.split(data_dir)
+            print("DIR TO BE COPIED FROM : ", data_dir) 
             print("DIR TO BE COPIED FROM : ", tail) 
-            local_data_dir = file_utils.create_dir_verbose(os.path.join(self.build_output_dir, tail))
-            print("LOCAL DATA DIR CREATED : ", local_data_dir) 
+            # local_data_dir = file_utils.create_dir_verbose(os.path.join(self.build_output_dir, tail))
+            local_data_dir = os.path.join(self.build_output_dir, tail)
+            # print("LOCAL DATA DIR CREATED : ", local_data_dir) 
+            print(" DATA DIR : ", data_dir) 
+            print(" DATA DIR : ", data_dir) 
+            print(" BUILD OUTPUT DIR : ", self.build_output_dir) 
+            print(" BUILD OUTPUT DIR : ", self.build_output_dir) 
+            print(" BUILD OUTPUT DIR : ", self.build_output_dir) 
 
-            file_utils.copy_files_except(source_dir=data_dir, destination_dir=local_data_dir)
+            file_utils.copy_files_except(source_dir=data_dir, destination_dir=self.build_output_dir)
+            # shutil.copytr(data_dir,local_data_dir, True)
 
         # Create a new Maya scene
         cmds.file(new=True, force=True)
@@ -265,3 +274,4 @@ class RigBuilder:
 # builder.import_rig()
 
 ############################################################################################################################################################
+# C:\Users\harri\Documents\BDP\cha\teshi\build_output\data\connection_data

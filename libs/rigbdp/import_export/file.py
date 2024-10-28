@@ -251,6 +251,7 @@ def backup_file(full_path, backup_dir_name="BAK"):
 
 def backup_rig_build(build_output_path, backup_dir_name="BAK"):
     bak_dir = join_and_norm(build_output_path, backup_dir_name)
+
     # within the backup_output's BAK dir
     # ------ create a new build_output dir and add a backup filename to it
     # Generate path to build output
@@ -259,14 +260,22 @@ def backup_rig_build(build_output_path, backup_dir_name="BAK"):
     versioned_output_dir = create_dir_verbose(output_dir_back_name)
     # ------ copy all files and directories in backup output, into this new backup build_output dir
     files_dirs = all_files_in_path_except(build_output_path, except_files=['BAK'])
+    print(f'all_files_in_path_except : {files_dirs}')
+
     return_files = []
     for path in files_dirs:
         if os.path.isfile(path):
             shutil.copy(path, versioned_output_dir)
             return_files = return_files + [path]
         if os.path.isdir(path):
-            tmp_files = copy_files_except(source_dir=path, destination_dir=versioned_output_dir, except_paths=['BAK'])
-            return_files = return_files + tmp_files
+            new_dst = f'{versioned_output_dir}{DELIMITER}{os.path.split(path)[1]}'
+            print(f'ITEM PATH : {path}')
+            print(f'DEST DIRECTORY : {new_dst}')
+            
+            shutil.copytree(src=path, dst=versioned_output_dir, dirs_exist_ok=True)
+            # copy_directory_contents_to_existing(path, new_dst)
+            # tmp_files = copy_files_except(source_dir=path, destination_dir=versioned_output_dir, except_paths=['BAK'])
+            return_files = return_files + [new_dst]
     for return_file in return_files:
         print(f'>>Backing up file ---> {return_file}\n>>File has been saved here ---> {versioned_output_dir}')
     # returns the newly versioned output_dir, the files copied there
@@ -275,6 +284,7 @@ def backup_rig_build(build_output_path, backup_dir_name="BAK"):
 # path_to_backup = r"C:\Users\harri\Documents\BDP\cha\teshi\build_output\BAK"
 # backup_files_in_directory(build_output_path=path_to_backup, backup_dir_name="BAK")
 ########################################################################################
+
 
 
 def backup_files_in_dir(path, backup_dir_name='BAK', except_files=['BAK']):

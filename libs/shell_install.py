@@ -2,7 +2,13 @@ import os, sys, platform
 
 from arpdecorator import asciiart
 
-@asciiart.draw_random_art
+
+# The Maya.env file is located in C:\Users\<Username>\Documents\maya\<version_number>\ on Windows,
+# $HOME/maya/<version_number>/ on Linux,
+# and $HOME/Library/Preferences/Autodesk/maya/<version_number>/ on macOS.
+
+
+
 def update_maya_env(env_path, debug=False):
     # Ensure the file path is properly formatted for the current OS
 
@@ -69,26 +75,33 @@ def update_maya_env(env_path, debug=False):
                     f.write(line)
             # Write the updated PYTHONPATH at the end
             f.write(new_pythonpath + "\n")
-        print(f"PYTHONPATH updated in Maya.env successfully.")
+
+def update_python_path(maya_year):
+    platform_info = platform.system()
+    home_dir = os.path.expanduser("~")
+    try:
+        print(f'updating the maya.env at : {home_dir}/maya/{maya_year}')
+        if platform_info == 'Linux':
+            update_maya_env(f'{home_dir}/maya/{maya_year}', debug=False)
+        elif platform_info == 'Darwin':
+            update_maya_env(f'{home_dir}/Library/Preferences/Autodesk/maya/{maya_year}')
+        elif platform_info == 'Windows':
+            update_maya_env(rf'{home_dir}\Documents\maya\{maya_year}', debug=False)
+        else:
+            print("You are now entering the twilight zone")
+        print(f"Installed for Maya {maya_year}.")
+        return True
+    except:
+        return False
 
 
+MAYA_YEAR = [2020, 2021, 2022, 2023, 2024, 2025]
 
-# Get the user's home directory (cross-platform)
-home_dir = os.path.expanduser("~")
-sep = os.path.sep
-print(f'{home_dir}{sep}maya{sep}2024')
-
-platform_info = platform.system()
-
-maya_year = '2024'
-if platform_info == 'Linux':
-    print("Installing PYTHON_PATH for Linux.")
-    update_maya_env(f'{home_dir}{sep}maya{sep}{maya_year}', debug=False)
-elif platform_info == 'Darwin':
-    print("Installing PYTHON_PATH forMac.")
-
-elif platform_info == 'Windows':
-    print("Installing PYTHON_PATH for Windows.")
-    update_maya_env(rf'{home_dir}\Documents\maya\{maya_year}', debug=False)
-else:
-    print("You are now entering the twilight zone")
+@asciiart.draw_random_art
+def update_maya():
+    success = []
+    for year in MAYA_YEAR:
+        success.append(update_python_path(str(year)))
+    if sum(success) > 0:
+        print('PYTHONPATH updated in Maya.env successfully.')
+update_maya()

@@ -5,16 +5,16 @@ import importlib, os, sys, json
 from maya import cmds
 from maya import mel
 # bdp
-import arpdecorator
+import rpdecorator
 from rigbdp.import_export import file as file_utils
 from rigbdp import import_export
 # from rigbdp import arpdecorator
 
 # reloads (DELETE_ME)
-importlib.reload(arpdecorator)
+importlib.reload(rpdecorator)
 importlib.reload(file_utils)
 
-@arpdecorator.sel_restore
+@rpdecorator.sel_restore
 def export_animation_to_json(control_list=[], file_path=""):
     """Export animation keyframes from specified controls to a JSON file."""
     animation_data = {}

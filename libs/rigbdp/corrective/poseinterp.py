@@ -5,8 +5,8 @@ import maya.cmds as cmds
 import maya.mel as mel
 import maya.api.OpenMaya as om2
 
-import arpdecorator
-importlib.reload(arpdecorator)
+import rpdecorator
+importlib.reload(rpdecorator)
 
 
 def matrix_to_euler_and_translate(flat_matrix):
@@ -135,7 +135,7 @@ def euler_to_matrix(rx=0, ry=0, rz=0):
 
 
 
-@arpdecorator.suppress_pose_editor
+@rpdecorator.suppress_pose_editor
 def addrbf(joint_name='L_arm00Out_jnt',
             control_name='L_fkArm00_ctrl',
             control_attrs = ['rx', 'ry', 'rz'],
@@ -149,7 +149,7 @@ def addrbf(joint_name='L_arm00Out_jnt',
 
 
 
-@arpdecorator.suppress_pose_editor
+@rpdecorator.suppress_pose_editor
 def add_pose_interpolator(joint_name='L_arm00Out_jnt',
                           control_name='L_fkArm00_ctrl',
                           control_attrs = ['rx', 'ry', 'rz'],

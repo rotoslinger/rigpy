@@ -5,13 +5,13 @@ import importlib, os, sys, json
 from maya import cmds
 from maya import mel
 # bdp
-import arpdecorator
+import rpdecorator
 from rigbdp.import_export import file as file_utils
 from rigbdp.import_export import get_scene_dir
 # from rigbdp import arpdecorator
 
 # reloads (DELETE_ME)
-importlib.reload(arpdecorator)
+importlib.reload(rpdecorator)
 importlib.reload(file_utils)
 
 
@@ -368,7 +368,7 @@ def connect_matrix_mults(connection_map, skincluster_name):
 # connect_matrix_mults(connection_map=json_data, skincluster_name="teshi_base_body_geo_bodyMechanics_skinCluster")
 ###########################################################################################################
 
-@arpdecorator.sel_restore # --- annoying but we have to use this to preserve selection as cmds.file doesn't have an export arg that takes a list....
+@rpdecorator.sel_restore # --- annoying but we have to use this to preserve selection as cmds.file doesn't have an export arg that takes a list....
 def export_obj(file_path, geometry):
         cmds.select(geometry)
         file_utils.backup_file(full_path=file_path)
@@ -382,7 +382,7 @@ def import_obj(file_path):
 ##################################### not going to use this ###############################################
 ###########################################################################################################
 
-@arpdecorator.sel_restore
+@rpdecorator.sel_restore
 def export_animation_to_json(control_list=[], file_path=""):
     """Export animation keyframes from specified controls to a JSON file."""
     animation_data = {}

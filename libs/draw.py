@@ -1,6 +1,6 @@
 import random
 
-from arpdecorator import asciiart
+from rpdecorator import asciiart
 def surprise_art():
     # Restore the original selection
     # Get a RANDOM index from the list

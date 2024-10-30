@@ -1,6 +1,6 @@
 import os, sys, platform
 
-from arpdecorator import asciiart
+from rpdecorator import asciiart
 
 
 # The Maya.env file is located in C:\Users\<Username>\Documents\maya\<version_number>\ on Windows,

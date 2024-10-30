@@ -1,5 +1,5 @@
 import maya.cmds as cmds
-import arpdecorator
+import rpdecorator
 def gather_joint_hier(root_joint):
     """
     Recursively gathers information about the joint hierarchy, including jointOrient and position.
@@ -47,7 +47,7 @@ joint_data = gather_joint_hier("joint1")
 ########################################
 
 
-@arpdecorator.sel_restore
+@rpdecorator.sel_restore
 def rebuild_joint_hier(joint_data, prefix='', suffix='_new', ):
     """
     Rebuilds a joint hierarchy from the provided joint data, creating and parenting joints in one step.

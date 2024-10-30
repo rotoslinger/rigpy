@@ -1,23 +1,24 @@
-########### FOR DEBUG PURPOSES #####################
-# #---paths
-mac_file = "/Users/leviharrison/Documents/workspace/maya/scripts/lhrig/scenes/insomniac_body_test.ma"
-linux_file = '/scratch/levih/dev/rotoslang/src/scenes/bodyJnts.ma'
-scene_path = linux_file
-weights_path = "/Users/leviharrison/Documents/workspace/maya/scripts/lhrig/insomniacWeights"
+# ########### FOR DEBUG PURPOSES #####################
+# # #---paths
+# mac_file = "/Users/leviharrison/Documents/workspace/maya/scripts/lhrig/scenes/insomniac_body_test.ma"
+# linux_file = '/scratch/levih/dev/rotoslang/src/scenes/bodyJnts.ma'
+# scene_path = linux_file
+# weights_path = "/Users/leviharrison/Documents/workspace/maya/scripts/lhrig/insomniacWeights"
  
-import sys
-import importlib
-linux = '/corp/projects/eng/lharrison/workspace/levi_harrison_test'
-mac = "/Users/leviharrison/Documents/workspace/maya/scripts/lhrig"
-#---determine operating system
-os = sys.platform
+# import sys
+# import importlib
+# linux = '/corp/projects/eng/lharrison/workspace/levi_harrison_test'
+# mac = "/Users/leviharrison/Documents/workspace/maya/scripts/lhrig"
+# #---determine operating system
+# os = sys.platform
 
-if "linux" in os:
-    os = linux
-if "darwin" in os:
-    os = mac
-if os not in sys.path:
-    sys.path.append(os)
+# if "linux" in os:
+#     os = linux
+# if "darwin" in os:
+#     os = mac
+# if os not in sys.path:
+#     sys.path.append(os)
+import importlib
 
 import maya.cmds as cmds
 from rig.utils import misc, weights

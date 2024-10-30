@@ -2,7 +2,7 @@
 import random, importlib
 from functools import wraps
 
-from arpdecorator.elements import RANDOM_ART, RANDOM_TEXT
+from rpdecorator.elements import RANDOM_ART, RANDOM_TEXT
 # importlib.reload(RANDOM_ART)
 # importlib.reload(RANDOM_TEXT)
 

@@ -3,9 +3,9 @@ from importlib import reload
 from maya import cmds
 from maya import mel
 
-import arpdecorator
+import rpdecorator
 
-@arpdecorator.undo_chunk
+@rpdecorator.undo_chunk
 def sel_all_rename(old_name='jsh', new_name='teshi'):
     # Transfers are a lot easier when all names of a character are replaced before export
     # It is less work:
@@ -19,7 +19,7 @@ def sel_all_rename(old_name='jsh', new_name='teshi'):
             cmds.rename(node, updated_name, ignoreShape=True)
             renamed_nodes.add(updated_name)  # Add the new name to the set
 
-@arpdecorator.undo_chunk
+@rpdecorator.undo_chunk
 def duplicate_and_rename():
     """
     meant for replacing all meshes in a SHAPES export with the nuetral of another char

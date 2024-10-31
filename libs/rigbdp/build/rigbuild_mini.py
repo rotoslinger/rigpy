@@ -9,7 +9,7 @@ importlib.reload(sdk_utils)
 importlib.reload(corrective)
 importlib.reload(post_scripts)
 
-'''
+r'''
 In order to get a successful rig build there are a few prerequisites
 1. Export your sculpts using shapes (you need to use the full path to this file as an arg)
 2. Export your set driven keys using sdk_utils
@@ -90,27 +90,27 @@ class RigMerge:
                 cmds.namespace(removeNamespace=ns)
 
 
-#################################### Usage ####################################
-# Initialize the RigMerger instance with file paths
-rig_merge = RigMerge(
-    char_name='jsh',
-    MnM_rig_path=r'C:\Users\harri\Documents\BDP\cha_input\jsh\jsh_RIG_200_v008MnM.ma',
-    corrective_mel_path=r'C:\Users\harri\Documents\BDP\cha_input\jsh\SHAPES\M_jsh_base_body_geoShapes_blendShape.mel',
-    sdk_data_path=r'C:\Users\harri\Documents\BDP\cha_input\jsh\sdk_data.json',
-    build_output_path=r'C:\Users\harri\Documents\BDP\cha_output\jsh_RIG_200_v008.ma'
-)
+# #################################### Usage ####################################
+# # Initialize the RigMerger instance with file paths
+# rig_merge = RigMerge(
+#     char_name='jsh',
+#     MnM_rig_path=r'C:\Users\harri\Documents\BDP\cha_input\jsh\jsh_RIG_200_v008MnM.ma',
+#     corrective_mel_path=r'C:\Users\harri\Documents\BDP\cha_input\jsh\SHAPES\M_jsh_base_body_geoShapes_blendShape.mel',
+#     sdk_data_path=r'C:\Users\harri\Documents\BDP\cha_input\jsh\sdk_data.json',
+#     build_output_path=r'C:\Users\harri\Documents\BDP\cha_output\jsh_RIG_200_v008.ma'
+# )
 
-# 1. Create a new scene, Import the MnM rig build
-rig_merge.init_mnm_rig()
+# # 1. Create a new scene, Import the MnM rig build
+# rig_merge.init_mnm_rig()
 
-# --- pre corrective import scripts
-post_scripts.create_upchest_sculpt_jnt()
+# # --- pre corrective import scripts
+# post_scripts.create_upchest_sculpt_jnt()
 
-# 2. Import correctives
-rig_merge.import_correctives()
+# # 2. Import correctives
+# rig_merge.import_correctives()
 
-# --- pre sdk scripts
+# # --- pre sdk scripts
 
-# 3.  Import and rebuild set driven key data
-rig_merge.import_sdk_data()
-###############################################################################
+# # 3.  Import and rebuild set driven key data
+# rig_merge.import_sdk_data()
+# ###############################################################################

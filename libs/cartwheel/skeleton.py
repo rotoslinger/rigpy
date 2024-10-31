@@ -1,5 +1,80 @@
 import maya.cmds as cmds
 import rpdecorator
+import maya.api.OpenMaya as om
+
+import maya.api.OpenMaya as om
+
+def create_joint(position=(0.0, 0.0, 0.0), 
+                 orientation=(0.0, 0.0, 0.0), 
+                 rotation=(0.0, 0.0, 0.0), 
+                 name='new_joint'):
+    '''
+    Create a joint at the specified position with the specified orientation and rotation using OpenMaya.
+
+    :param position (tuple): The (x, y, z) position for the joint.
+    :param orientation (tuple): The (x, y, z) orientation for the joint in degrees.
+    :param rotation (tuple): The (x, y, z) rotation for the joint in degrees.
+    :param name (str): The name for the new joint.
+    :return: The name of the created joint.
+    '''
+    # Create a new MFnJoint function set
+    joint_fn = om.MFnJoint()
+
+    # Create the joint at the specified position
+    joint_dag_path = joint_fn.create(om.MPoint(position[0], position[1], position[2]), name)
+
+    # Set joint orientation and rotation
+    joint_fn.setOrientation(om.MVector(orientation[0], orientation[1], orientation[2]))
+    joint_fn.setRotation(om.MVector(rotation[0], rotation[1], rotation[2]))
+
+    return joint_dag_path.fullPathName()
+
+# Example usage
+new_joint = create_joint(position=(1.0, 2.0, 3.0), 
+                         orientation=(0.0, 1.0, 0.0), 
+                         rotation=(45.0, 0.0, 0.0), 
+                         name='my_joint')
+print(f'Created joint: {new_joint}')
+
+
+import maya.api.OpenMaya as om
+
+def get_joint_world_info(joint_name):
+    '''
+    Get the world space rotation, orientation, and location of a joint.
+
+    :param joint_name (str): The name of the joint to query.
+    :return: A dictionary containing the world space rotation, orientation, and location.
+    '''
+    # Get the selection of the joint by name
+    selection = om.MSelectionList()
+    selection.add(joint_name)
+    joint_dag_path = selection.getDagPath(0)
+    
+    # Create a function set for the joint
+    joint_fn = om.MFnIkJoint(joint_dag_path)
+
+    # Get the world space position
+    world_position = joint_fn.transformation().translation(om.MSpace.kWorld)
+
+    # Get the joint's rotation (in degrees)
+    world_rotation = joint_fn.rotation(asDegrees=True)
+
+    # Get the joint's orientation (in degrees)
+    world_orientation = joint_fn.orientation(asDegrees=True)
+
+    return {
+        'world_position': (world_position.x, world_position.y, world_position.z),
+        'world_rotation': (world_rotation.x, world_rotation.y, world_rotation.z),
+        'world_orientation': (world_orientation.x, world_orientation.y, world_orientation.z)
+    }
+
+# Example usage
+joint_info = get_joint_world_info('my_joint')
+print(f"Joint Info: {joint_info}")
+
+
+
 def gather_joint_hier(root_joint):
     """
     Recursively gathers information about the joint hierarchy, including jointOrient and position.

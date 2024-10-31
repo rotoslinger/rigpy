@@ -1,22 +1,28 @@
 {
 	"folders": [
 		{
+			"name": "CARTWHEEL",
+			"path": "../../CARTWHEEL"
+		},
+		{
+			"name": "pymel",
 			"path": "../../../../../../AppData/Roaming/Python/Python311/site-packages/pymel"
 		},
 		{
+			"name": "scripts",
 			"path": "../../../../../../Program Files/Autodesk/Maya2024/plug-ins/camd/scripts"
 		},
 		{
+			"name": "scripts",
 			"path": "../../../BDP/shapes/SHAPES/SHAPES/modules/SHAPES/scripts"
 		},
 		{
+			"name": "SHAPES_transfer",
 			"path": "../../../BDP/cha/SHAPES_transfer"
 		},
 		{
+			"name": "rigpy",
 			"path": ".."
-		},
-		{
-			"path": "../../geobasil"
 		}
 	],
 	"settings": {

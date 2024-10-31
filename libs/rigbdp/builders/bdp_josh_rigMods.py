@@ -3,7 +3,7 @@ import maya.OpenMaya as om
 #import pymel.core as pm
 import math
 
-def BDP_outSkel_rigMod(side):
+def BDP_outSkel_rigMod():
     
     ##########################################################################################
     '''
@@ -42,104 +42,108 @@ def BDP_outSkel_rigMod(side):
     ############
     #create new IK/FK out skeleton joints
     ############
-
-    cmds.duplicate(side + 'arm00Out_jnt', rc=True)
-    jnts = cmds.listRelatives(side + 'arm00Out_jnt1', ad=True)
-
-    for jnt in jnts:
+    
+    sides = ['L_', 'R_']
+    
+    for side in sides:
         
-        if jnt == side + 'arm00Out_jnt1':
-           pass
-        
-        elif jnt == side + 'arm05Out_jnt1':
-           pass
-        elif jnt == side + 'hand00Out_jnt1':
-           pass
-               
-        else:
-            cmds.delete(jnt)
+        cmds.duplicate(side + 'arm00Out_jnt', rc=True)
+        jnts = cmds.listRelatives(side + 'arm00Out_jnt1', ad=True)
+
+        for jnt in jnts:
             
-    cmds.rename(side + 'arm00Out_jnt1', side + 'armUpOut_jntNull')
-    cmds.rename(side + 'arm05Out_jnt1', side + 'armLowOut_jntNull')
-    cmds.rename(side + 'hand00Out_jnt1', side + 'handOut_jntNull')
-
-    cmds.parentConstraint(side + 'fkArmMechanics00_jnt', side + 'ikArmIKMechanics00_jnt', side + 'armUpOut_jntNull', mo=True)
-    cmds.parentConstraint(side + 'fkArmMechanics01_jnt', side + 'ikArmIKMechanics01_jnt', side + 'armLowOut_jntNull', mo=True)
-    cmds.parentConstraint(side + 'fkArmMechanics02_jnt', side + 'ikArmIKMechanics02_jnt', side + 'handOut_jntNull', mo=True)
-
-    #connect FK/IK blends
-
-    #up
-    cmds.shadingNode('reverse', asUtility=True, n=side + 'armUpOut_jntNull_reverse')
-
-    cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armUpOut_jntNull_reverse.inputX')
-    cmds.connectAttr(side + 'armUpOut_jntNull_reverse.outputX', side + 'armUpOut_jntNull_parentConstraint1.' + side + 'ikArmIKMechanics00_jntW1')
-    cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armUpOut_jntNull_parentConstraint1.' + side + 'fkArmMechanics00_jntW0')
-
-    #low
-    cmds.shadingNode('reverse', asUtility=True, n=side + 'armLowOut_jntNull_reverse')
-
-    cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armLowOut_jntNull_reverse.inputX')
-    cmds.connectAttr(side + 'armLowOut_jntNull_reverse.outputX', side + 'armLowOut_jntNull_parentConstraint1.' + side + 'ikArmIKMechanics01_jntW1')
-    cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armLowOut_jntNull_parentConstraint1.' + side + 'fkArmMechanics01_jntW0')
-
-    #hand
-    cmds.shadingNode('reverse', asUtility=True, n=side + 'handOut_jntNull_reverse')
-
-    cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'handOut_jntNull_reverse.inputX')
-    cmds.connectAttr(side + 'handOut_jntNull_reverse.outputX', side + 'handOut_jntNull_parentConstraint1.' + side + 'ikArmIKMechanics02_jntW1')
-    cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'handOut_jntNull_parentConstraint1.' + side + 'fkArmMechanics02_jntW0')
-
-    #######################################################################
-
-    cmds.duplicate(side + 'ikLegIKMechanics00_jnt', rc=True)
-    jnts = cmds.listRelatives(side + 'ikLegIKMechanics00_jnt1', ad=True)
-
-    for jnt in jnts:
-        
-        if jnt == side + 'ikLegIKMechanics00_jnt1':
-           pass
-        
-        elif jnt == side + 'ikLegIKMechanics01_jnt1':
-           pass
-        elif jnt == side + 'ikLegIKMechanics02_jnt1':
-           pass
-               
-        else:
-            cmds.delete(jnt)
+            if jnt == side + 'arm00Out_jnt1':
+               pass
             
-    cmds.rename(side + 'ikLegIKMechanics00_jnt1', side + 'legUpOut_jntNull')
-    cmds.rename(side + 'ikLegIKMechanics01_jnt1', side + 'legLowOut_jntNull')
-    cmds.rename(side + 'ikLegIKMechanics02_jnt1', side + 'footOut_jntNull')
+            elif jnt == side + 'arm05Out_jnt1':
+               pass
+            elif jnt == side + 'hand00Out_jnt1':
+               pass
+                   
+            else:
+                cmds.delete(jnt)
+                
+        cmds.rename(side + 'arm00Out_jnt1', side + 'armUpOut_jntNull')
+        cmds.rename(side + 'arm05Out_jnt1', side + 'armLowOut_jntNull')
+        cmds.rename(side + 'hand00Out_jnt1', side + 'handOut_jntNull')
 
-    cmds.parent(side + 'legUpOut_jntNull', 'M_spineHipOut_jnt')
+        cmds.parentConstraint(side + 'fkArmMechanics00_jnt', side + 'ikArmIKMechanics00_jnt', side + 'armUpOut_jntNull', mo=True)
+        cmds.parentConstraint(side + 'fkArmMechanics01_jnt', side + 'ikArmIKMechanics01_jnt', side + 'armLowOut_jntNull', mo=True)
+        cmds.parentConstraint(side + 'fkArmMechanics02_jnt', side + 'ikArmIKMechanics02_jnt', side + 'handOut_jntNull', mo=True)
 
-    cmds.parentConstraint(side + 'fkLegMechanics00_jnt', side + 'ikLegIKMechanics00_jnt', side + 'legUpOut_jntNull', mo=True)
-    cmds.parentConstraint(side + 'fkLegMechanics01_jnt', side + 'ikLegIKMechanics01_jnt', side + 'legLowOut_jntNull', mo=True)
-    cmds.parentConstraint(side + 'fkLegMechanics02_jnt', side + 'ikLegIKMechanics02_jnt', side + 'footOut_jntNull', mo=True)
+        #connect FK/IK blends
 
-    #connect FK/IK blends
+        #up
+        cmds.shadingNode('reverse', asUtility=True, n=side + 'armUpOut_jntNull_reverse')
 
-    #up
-    cmds.shadingNode('reverse', asUtility=True, n=side + 'legUpOut_jntNull_reverse')
+        cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armUpOut_jntNull_reverse.inputX')
+        cmds.connectAttr(side + 'armUpOut_jntNull_reverse.outputX', side + 'armUpOut_jntNull_parentConstraint1.' + side + 'ikArmIKMechanics00_jntW1')
+        cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armUpOut_jntNull_parentConstraint1.' + side + 'fkArmMechanics00_jntW0')
 
-    cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legUpOut_jntNull_reverse.inputX')
-    cmds.connectAttr(side + 'legUpOut_jntNull_reverse.outputX', side + 'legUpOut_jntNull_parentConstraint1.' + side + 'ikLegIKMechanics00_jntW1')
-    cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legUpOut_jntNull_parentConstraint1.' + side + 'fkLegMechanics00_jntW0')
+        #low
+        cmds.shadingNode('reverse', asUtility=True, n=side + 'armLowOut_jntNull_reverse')
 
-    #low
-    cmds.shadingNode('reverse', asUtility=True, n=side + 'legLowOut_jntNull_reverse')
+        cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armLowOut_jntNull_reverse.inputX')
+        cmds.connectAttr(side + 'armLowOut_jntNull_reverse.outputX', side + 'armLowOut_jntNull_parentConstraint1.' + side + 'ikArmIKMechanics01_jntW1')
+        cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'armLowOut_jntNull_parentConstraint1.' + side + 'fkArmMechanics01_jntW0')
 
-    cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legLowOut_jntNull_reverse.inputX')
-    cmds.connectAttr(side + 'legLowOut_jntNull_reverse.outputX', side + 'legLowOut_jntNull_parentConstraint1.' + side + 'ikLegIKMechanics01_jntW1')
-    cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legLowOut_jntNull_parentConstraint1.' + side + 'fkLegMechanics01_jntW0')
+        #hand
+        cmds.shadingNode('reverse', asUtility=True, n=side + 'handOut_jntNull_reverse')
 
-    #foot
-    cmds.shadingNode('reverse', asUtility=True, n=side + 'footOut_jntNull_reverse')
+        cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'handOut_jntNull_reverse.inputX')
+        cmds.connectAttr(side + 'handOut_jntNull_reverse.outputX', side + 'handOut_jntNull_parentConstraint1.' + side + 'ikArmIKMechanics02_jntW1')
+        cmds.connectAttr(side + 'armSettings_ctrl.fkIkBlend', side + 'handOut_jntNull_parentConstraint1.' + side + 'fkArmMechanics02_jntW0')
 
-    cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'footOut_jntNull_reverse.inputX')
-    cmds.connectAttr(side + 'footOut_jntNull_reverse.outputX', side + 'footOut_jntNull_parentConstraint1.' + side + 'ikLegIKMechanics02_jntW1')
-    cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'footOut_jntNull_parentConstraint1.' + side + 'fkLegMechanics02_jntW0')
+        #######################################################################
+
+        cmds.duplicate(side + 'ikLegIKMechanics00_jnt', rc=True)
+        jnts = cmds.listRelatives(side + 'ikLegIKMechanics00_jnt1', ad=True)
+
+        for jnt in jnts:
+            
+            if jnt == side + 'ikLegIKMechanics00_jnt1':
+               pass
+            
+            elif jnt == side + 'ikLegIKMechanics01_jnt1':
+               pass
+            elif jnt == side + 'ikLegIKMechanics02_jnt1':
+               pass
+                   
+            else:
+                cmds.delete(jnt)
+                
+        cmds.rename(side + 'ikLegIKMechanics00_jnt1', side + 'legUpOut_jntNull')
+        cmds.rename(side + 'ikLegIKMechanics01_jnt1', side + 'legLowOut_jntNull')
+        cmds.rename(side + 'ikLegIKMechanics02_jnt1', side + 'footOut_jntNull')
+
+        cmds.parent(side + 'legUpOut_jntNull', 'M_spineHipOut_jnt')
+
+        cmds.parentConstraint(side + 'fkLegMechanics00_jnt', side + 'ikLegIKMechanics00_jnt', side + 'legUpOut_jntNull', mo=True)
+        cmds.parentConstraint(side + 'fkLegMechanics01_jnt', side + 'ikLegIKMechanics01_jnt', side + 'legLowOut_jntNull', mo=True)
+        cmds.parentConstraint(side + 'fkLegMechanics02_jnt', side + 'ikLegIKMechanics02_jnt', side + 'footOut_jntNull', mo=True)
+
+        #connect FK/IK blends
+
+        #up
+        cmds.shadingNode('reverse', asUtility=True, n=side + 'legUpOut_jntNull_reverse')
+
+        cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legUpOut_jntNull_reverse.inputX')
+        cmds.connectAttr(side + 'legUpOut_jntNull_reverse.outputX', side + 'legUpOut_jntNull_parentConstraint1.' + side + 'ikLegIKMechanics00_jntW1')
+        cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legUpOut_jntNull_parentConstraint1.' + side + 'fkLegMechanics00_jntW0')
+
+        #low
+        cmds.shadingNode('reverse', asUtility=True, n=side + 'legLowOut_jntNull_reverse')
+
+        cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legLowOut_jntNull_reverse.inputX')
+        cmds.connectAttr(side + 'legLowOut_jntNull_reverse.outputX', side + 'legLowOut_jntNull_parentConstraint1.' + side + 'ikLegIKMechanics01_jntW1')
+        cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'legLowOut_jntNull_parentConstraint1.' + side + 'fkLegMechanics01_jntW0')
+
+        #foot
+        cmds.shadingNode('reverse', asUtility=True, n=side + 'footOut_jntNull_reverse')
+
+        cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'footOut_jntNull_reverse.inputX')
+        cmds.connectAttr(side + 'footOut_jntNull_reverse.outputX', side + 'footOut_jntNull_parentConstraint1.' + side + 'ikLegIKMechanics02_jntW1')
+        cmds.connectAttr(side + 'legSettings_ctrl.fkIkBlend', side + 'footOut_jntNull_parentConstraint1.' + side + 'fkLegMechanics02_jntW0')
 
 
 def BDP_palmAttr_rigMod(side):

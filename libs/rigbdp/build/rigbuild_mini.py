@@ -4,6 +4,7 @@ from maya import cmds, mel
 
 from rigbdp.import_export import sdk_utils, corrective
 from rigbdp.build import post_scripts
+from rigbdp import utils as rig_utils
 
 importlib.reload(sdk_utils)
 importlib.reload(corrective)
@@ -28,11 +29,14 @@ class RigMerge:
     def __init__(self,
                  char_name,
                  MnM_rig_path,
+                 MnM_rig_path_2022,
                  corrective_mel_path,
                  sdk_data_path,
+                 joint_vis_prefs=False,
                  build_output_path=''):
         self.char_name = char_name
         self.MnM_rig_path = MnM_rig_path
+        self.MnM_rig_path_2022 = MnM_rig_path_2022
         self.build_output_path = build_output_path
         self.corrective_mel_path = corrective_mel_path
         self.sdk_data_path = sdk_data_path
@@ -40,14 +44,6 @@ class RigMerge:
         # these paths have to be maya-ified even if you are on windows
         self.corrective_mel_path = self.corrective_mel_path.replace('\\', '/' )
         self.build_output_path = self.build_output_path.replace('\\', '/' )
-
-
-    def merge(self):
-        self.new_scene()
-        self.import_mnm_rig()
-        self.corrective_prep()
-        self.import_correctives()
-        self.import_sdk_data()
 
 
     def init_mnm_rig(self):
@@ -60,7 +56,7 @@ class RigMerge:
         # Finally, 
         # If no build output, leave saving up to user discretion
         if not self.build_output_path: return
-        
+
         # If build output path given, save file
         cmds.file(rename=self.build_output_path)
         cmds.file(save=True, type='mayaAscii')
@@ -73,14 +69,34 @@ class RigMerge:
         # 4. Import correctives
         mel.eval(f'source "{self.corrective_mel_path}";')
 
+        # 4a. Turn on all model_fix blendshape targets for every blendShape in the scene
+        blendshapes = cmds.ls(type='blendShape')
+        for bs in blendshapes:
+            mod_fix_tgt = f'{bs}.model_fix'
+            if cmds.objExists(mod_fix_tgt):
+                cmds.setAttr(mod_fix_tgt, 1)
+                cmds.setAttr(mod_fix_tgt, edit=True, lock=True)
+
 
     def import_sdk_data(self):
         # 5. Import and rebuild set driven key data
         sdk_utils.import_sdks(self.sdk_data_path)
 
+        rig_utils.clean_intermediate_nodes()
+        cmds.setAttr("preferences.showClothes",1)
+
+
 
     def __import_rig_clean(self):
+        maya_version_year = cmds.about(version=True)
+
+        if '2022' in str(maya_version_year):
+            self.build_output_path = f'{self.build_output_path}_maya2022'
+            print('THE YEAR IS 2022')
+            self.MnM_rig_path = self.MnM_rig_path_2022
+
         cmds.file(self.MnM_rig_path, i=True, namespace=":", preserveReferences=True)
+
         # Flatten namespaces (remove them)
         cmds.namespace(set=':')
         namespaces = cmds.namespaceInfo(listOnlyNamespaces=True)

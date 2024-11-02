@@ -3,6 +3,7 @@ import rpdecorator
 import maya.api.OpenMaya as om
 
 import maya.api.OpenMaya as om
+import maya.api.OpenMayaAnim as oma
 
 def create_joint(position=(0.0, 0.0, 0.0), 
                  orientation=(0.0, 0.0, 0.0), 
@@ -11,10 +12,10 @@ def create_joint(position=(0.0, 0.0, 0.0),
     '''
     Create a joint at the specified position with the specified orientation and rotation using OpenMaya.
 
-    :param position (tuple): The (x, y, z) position for the joint.
-    :param orientation (tuple): The (x, y, z) orientation for the joint in degrees.
-    :param rotation (tuple): The (x, y, z) rotation for the joint in degrees.
-    :param name (str): The name for the new joint.
+    ::param position (tuple): The (x, y, z) position for the joint.
+    ::param orientation (tuple): The (x, y, z) orientation for the joint in degrees.
+    ::param rotation (tuple): The (x, y, z) rotation for the joint in degrees.
+    ::param name (str): The name for the new joint.
     :return: The name of the created joint.
     '''
     # Create a new MFnJoint function set
@@ -43,7 +44,7 @@ def get_joint_world_info(joint_name):
     '''
     Get the world space rotation, orientation, and location of a joint.
 
-    :param joint_name (str): The name of the joint to query.
+    ::param joint_name (str): The name of the joint to query.
     :return: A dictionary containing the world space rotation, orientation, and location.
     '''
     # Get the selection of the joint by name

@@ -25,7 +25,7 @@ class nurbsSurfaceData():
 
         """
         type  name:                        string
-        param name:                        name of the deformer you want to
+        :param name:                        name of the deformer you want to
                                             export
         """
 

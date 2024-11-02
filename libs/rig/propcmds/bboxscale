@@ -6,7 +6,7 @@ from shiboken2 import wrapInstance
 def get_bounding_box(obj):
     """
     Get the bounding box of the given object.
-    :param obj: Name of the object.
+    ::param obj: Name of the object.
     :return: Bounding box [min_x, min_y, min_z, max_x, max_y, max_z].
     """
     return cmds.exactWorldBoundingBox(obj)
@@ -16,8 +16,8 @@ def calculate_scaling_factors(target_bbox, current_bbox):
     Calculate the scaling factors between the target and current bounding boxes.
     Handles cases where any of the bounding box dimensions are zero or extremely small.
     
-    :param target_bbox: Bounding box of the target object.
-    :param current_bbox: Bounding box of the current object.
+    ::param target_bbox: Bounding box of the target object.
+    ::param current_bbox: Bounding box of the current object.
     :return: Scaling factors (scale_x, scale_y, scale_z).
     """
     # Calculate the dimensions of the target and current bounding boxes
@@ -44,10 +44,10 @@ def scale_object(scale_factors, obj, uniform=False, scale_points=False):
     Apply scaling to the given object. Can scale uniformly or non-uniformly.
     Takes into account any prior scaling on the object.
     
-    :param scale_factors: Scaling factors (scale_x, scale_y, scale_z).
-    :param obj: Name of the object to be scaled.
-    :param uniform: Whether to scale uniformly to the largest dimension.
-    :param scale_points: Whether to scale object points (cvs) instead of the transform.
+    ::param scale_factors: Scaling factors (scale_x, scale_y, scale_z).
+    ::param obj: Name of the object to be scaled.
+    ::param uniform: Whether to scale uniformly to the largest dimension.
+    ::param scale_points: Whether to scale object points (cvs) instead of the transform.
     """
     # Get the current scale of the object
     current_scale = cmds.getAttr(f"{obj}.scale")[0]
@@ -73,8 +73,8 @@ def scale_object(scale_factors, obj, uniform=False, scale_points=False):
 def move_to_center(target_bbox, obj):
     """
     Move the given object to the center of the target bounding box.
-    :param target_bbox: Bounding box of the target object.
-    :param obj: Name of the object to move.
+    ::param target_bbox: Bounding box of the target object.
+    ::param obj: Name of the object to move.
     """
     center_x = (target_bbox[0] + target_bbox[3]) / 2
     center_y = (target_bbox[1] + target_bbox[4]) / 2
@@ -84,7 +84,7 @@ def move_to_center(target_bbox, obj):
 def is_scale_locked(obj):
     """
     Check if any of the scale attributes of the given object are locked.
-    :param obj: Name of the object.
+    ::param obj: Name of the object.
     :return: Boolean indicating whether any scale attributes are locked.
     """
     return any([cmds.getAttr(f"{obj}.scale{axis}", lock=True) for axis in 'XYZ'])
@@ -92,7 +92,7 @@ def is_scale_locked(obj):
 def are_points_locked(obj):
     """
     Check if any of the points (CVs or vertices) of the object are locked.
-    :param obj: Name of the object.
+    ::param obj: Name of the object.
     :return: Boolean indicating whether any points are locked.
     """
     if cmds.nodeType(obj) == 'nurbsCurve':
@@ -105,7 +105,7 @@ def are_points_locked(obj):
 def unlock_points(obj):
     """
     Unlock all points (CVs or vertices) of the given object.
-    :param obj: Name of the object.
+    ::param obj: Name of the object.
     """
     if cmds.nodeType(obj) == 'nurbsCurve':
         points = cmds.ls(f'{obj}.cv[*]', fl=True)
@@ -118,8 +118,8 @@ def unlock_points(obj):
 def show_warning_popup(obj, scale_points=False):
     """
     Show a warning popup for locked attributes and ask whether to unlock points (CVs) or scale them.
-    :param obj: Name of the object.
-    :param scale_points: If True, warns about locked points.
+    ::param obj: Name of the object.
+    ::param scale_points: If True, warns about locked points.
     :return: Boolean indicating whether the user chose to unlock points or scale points.
     """
     maya_main_window_ptr = omui.MQtUtil.mainWindow()
@@ -148,11 +148,11 @@ def scale_and_center_polycube(target_model, polycube, scale_points=False, unifor
     Scales the polycube to match the bounding box of the target model and centers it.
     Supports scaling points (cvs), uniform scaling, and handling locked scale attributes.
     
-    :param target_model: Name of the target model.
-    :param polycube: Name of the polycube to be scaled.
-    :param scale_points: If True, scales the object's points (cvs or vertices) instead of the transform.
-    :param uniform: If True, scales the object uniformly to the largest dimension.
-    :param ignore_locked_scale: If True, ignores locked scale attributes.
+    ::param target_model: Name of the target model.
+    ::param polycube: Name of the polycube to be scaled.
+    ::param scale_points: If True, scales the object's points (cvs or vertices) instead of the transform.
+    ::param uniform: If True, scales the object uniformly to the largest dimension.
+    ::param ignore_locked_scale: If True, ignores locked scale attributes.
     """
     if not scale_points and is_scale_locked(polycube) and not ignore_locked_scale:
         if show_warning_popup(polycube):

@@ -793,8 +793,8 @@ def copy_files_with_newer_timestamps(source_dir, destination_dir):
     Copy all files from source_dir to destination_dir.
     If destination_dir already exists, only copy files with newer timestamps.
 
-    :param source_dir: The source directory to copy files from.
-    :param destination_dir: The destination directory to copy files to.
+    ::param source_dir: The source directory to copy files from.
+    ::param destination_dir: The destination directory to copy files to.
     """
     # Normalize paths
     source_dir = os.path.normpath(source_dir)

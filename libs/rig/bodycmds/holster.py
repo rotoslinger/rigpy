@@ -50,13 +50,13 @@ class create_holster_rig():
                  ):
         """
         type  sides:                string
-        param sides:                C or L or R
+        :param sides:                C or L or R
 
         type  names:                string
-        param names:                the name of your rivet
+        :param names:                the name of your rivet
         
         type  joints:               list of strings
-        param joints:               if you include joint names you will inherit
+        :param joints:               if you include joint names you will inherit
                                      the name and transform of the joint this
                                      means the names, translates, and rotates,
                                      arguments do not need to be used
@@ -65,43 +65,43 @@ class create_holster_rig():
 
 
         type  translates:           3 tuple
-        param translates:           translation of the poly plane (Tx, Ty, Tz 
+        :param translates:           translation of the poly plane (Tx, Ty, Tz 
                                      attributes)
 
         type  rotates:              3 tuple
-        param rotates:              rotation of the poly plane (Rx, Ry, Rz 
+        :param rotates:              rotation of the poly plane (Rx, Ry, Rz 
                                      attributes)
 
         type  scales:               3 tuple
-        param scales:               scale of the poly plane (Sx, Sy, Sz 
+        :param scales:               scale of the poly plane (Sx, Sy, Sz 
                                      attributes)
 
         type  uvs:                  2 doubles
-        param uvs:                  this will tell the point on poly constraint
+        :param uvs:                  this will tell the point on poly constraint
                                      what u and v parameters you want to 
                                      constrain to
 
         type  num_buffers:          unsigned int
-        param num_buffers:          the amount of buffers you will have above
+        :param num_buffers:          the amount of buffers you will have above
                                      your ctl one is mandatory (even if you give
                                      0) but above that is your choice. 
 
         type  rig_parent:           string array
-        param rig_parent:           the group where you parent your skeleton
+        :param rig_parent:           the group where you parent your skeleton
         
         type  skel_parent:          string array
-        param skel_parent:          the group where you parent your skeleton
+        :param skel_parent:          the group where you parent your skeleton
 
         type  lock_attrs:           string array
-        param lock_attrs:           ctl arg: the attribute names you want 
+        :param lock_attrs:           ctl arg: the attribute names you want 
                                      locked, unkeyable, and hidden
 
         type  size:                 float
-        param size:                 ctl arg: average size of all points in ctl 
+        :param size:                 ctl arg: average size of all points in ctl 
                                      in units
 
         type  global_scale:         string
-        param global_scale:         what the rig will be attached to
+        :param global_scale:         what the rig will be attached to
                                      for scaling usually lowest point in
                                      hierarchy of global ctl
         """

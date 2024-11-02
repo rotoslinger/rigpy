@@ -35,11 +35,11 @@ class exportDeformer(lh_deformer_export):
 
         """
         type  name:                        string
-        param name:                        name of the deformer you want to
+        :param name:                        name of the deformer you want to
                                             export
 
         type  export_path:                 string
-        param export_path:                 path to export to
+        :param export_path:                 path to export to
 
         """
 

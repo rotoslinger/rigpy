@@ -25,17 +25,17 @@ class add_weights():
         """
                                      
         type  deformer_type:        string
-        param deformer_type:        supported types: "LHSlideDeformer",
+        :param deformer_type:        supported types: "LHSlideDeformer",
                                      "LHVectorDeformer","LHCurveRollDeformer"
                                      
         type  names:                string array
-        param names:                the names of the weights you will be adding
+        :param names:                the names of the weights you will be adding
         
         type  geoms:                string array
-        param geoms:                the names of the geometry that will be
+        :param geoms:                the names of the geometry that will be
                                      affected
         type  geoms:                string array
-        param geoms:                the names of the geometry that will be
+        :param geoms:                the names of the geometry that will be
                                      affected
         """
         #----args
@@ -323,24 +323,24 @@ class bake_blendshape():
                  ):
         """
         type  geo:                   string
-        param geo:                   the side you are copying from
+        :param geo:                   the side you are copying from
         
         type  name:                  string
-        param name:                  name of the blendshape
+        :param name:                  name of the blendshape
 
         type  attr:                  string
-        param attr:                  the attribute that will be converted into
+        :param attr:                  the attribute that will be converted into
                                       a blendshape 
                                       ex: "C_mouth_SLD.L_Side"
 
         type  attr_min:              float
-        param attr_min:              the lowest the attribute will go
+        :param attr_min:              the lowest the attribute will go
 
         type  attr_max:              float
-        param attr_max:              the highest the attribute will go
+        :param attr_max:              the highest the attribute will go
 
         type  num_inbetweens:        int
-        param num_inbetweens:        the number of inbetweens that will be
+        :param num_inbetweens:        the number of inbetweens that will be
                                       generated.  Note: number of in-betweens
                                       refers to the amount of in-betweens in
                                       both the positive and negative values. If 

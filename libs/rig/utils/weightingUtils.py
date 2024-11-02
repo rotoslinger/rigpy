@@ -96,9 +96,9 @@ def setWeightsOnSelectedAcculmulative(weightAttr="LHWeightDeformer.C_testFace_SL
     """
     Used for weight dragging
     Accumulates a weight on selected points.  Adds or subtracts weight to the currently selected point(s)
-    :param self:
-    :param weightAttr:
-    :param weightValue:
+    ::param self:
+    ::param weightAttr:
+    ::param weightValue:
     :return:
     """
     # curr = cmds.currentCtx(q=True)
@@ -200,9 +200,9 @@ def averageWeightlist(weightListFilter, weightlist, currentPointIndex):
     """
     Takes a large number of weight values, averages them, and sets them to a single point.  You must give the entire
     list of points weights, and a list of indicies to get the information.  Returns the single point weight value.
-    :param weightListFilter: a list of indicies to average (might gathering weights from points 1,4,5 only, or could be 0:-1 (the whole list))
-    :param weightlist: an entire list of weights for an object (a value for every point in a mesh)
-    :param currentPointIndex: the current point where the average weights will be set
+    ::param weightListFilter: a list of indicies to average (might gathering weights from points 1,4,5 only, or could be 0:-1 (the whole list))
+    ::param weightlist: an entire list of weights for an object (a value for every point in a mesh)
+    ::param currentPointIndex: the current point where the average weights will be set
     :return:
     """
     connectedWeights = [weightlist[i] for i in weightListFilter]
@@ -294,7 +294,7 @@ def gradientWeightsBetween2Points(weightAttribute="LHWeightDeformer.C_testFace_S
     gttrPoint = OpenMaya.MPoint()
     util = OpenMaya.MScriptUtil()
     # util.createFromInt(0)
-    param = util.asDoublePtr()
+    :param = util.asDoublePtr()
     for id in indicies:
         mesh.getPoint(id, gttrPoint, OpenMaya.MSpace.kWorld)
         fnCurve.closestPoint(gttrPoint, param, OpenMaya.MSpace.kWorld)
@@ -338,9 +338,9 @@ def modulateBetween2ValuesByFactor(value1, value2, factor):
     A blend between value1 and value2.  Factor should be between 0-1
     if factor is 0 the result will be value 1 and if the factor is 1 the value would be equal to value2
     A factor of .5 would be right inbetween the two values
-    :param value1: a numerical value
-    :param value2: a numerical value
-    :param factor: a numerical value, should at least  be a float if not a double, needs to be between 0-1
+    ::param value1: a numerical value
+    ::param value2: a numerical value
+    ::param factor: a numerical value, should at least  be a float if not a double, needs to be between 0-1
     :return: the output
     """
     return value2 + ((value1 - value2) * factor)
@@ -371,7 +371,7 @@ def averageWeightsBetween2Points(weightAttribute="LHWeightDeformer.C_testFace_SL
 def averageBetweenPoints(weightAttr = "LHWeightDeformer.C_testFace_SLD.lSideWeight"):
     """
     Averages weights between 2 points.  Works best when selecting points on the same edgeloop.
-    :param weightAttr: the name of the weight attribute
+    ::param weightAttr: the name of the weight attribute
     :return:
     """
     if not weightAttr:
@@ -395,7 +395,7 @@ def averageBetweenPoints(weightAttr = "LHWeightDeformer.C_testFace_SLD.lSideWeig
 def gradientBetweenPoints(weightAttr = "LHWeightDeformer.C_testFace_SLD.lSideWeight", calcDeformed=False):
     """
     Averages weights between 2 points.  Works best when selecting points on the same edgeloop.
-    :param weightAttr: the name of the weight attribute
+    ::param weightAttr: the name of the weight attribute
     :return:
     """
     if not weightAttr:
@@ -433,7 +433,7 @@ def gradientBetweenPoints(weightAttr = "LHWeightDeformer.C_testFace_SLD.lSideWei
 
 
     # util.createFromInt(0)
-    param = util.asDoublePtr()
+    :param = util.asDoublePtr()
     for id in indicies:
         mesh.getPoint(id, gttrPoint, OpenMaya.MSpace.kWorld)
         fnCurve.closestPoint(gttrPoint, param, OpenMaya.MSpace.kWorld)
@@ -477,7 +477,7 @@ def trackComponentSelectionOrder():
 
 def getWeightsFromAttribute(weightAttribute, OMObjectType="MItMeshVertex"):
     """
-    :param weightAttribute:
+    ::param weightAttribute:
     :return:
     currentWeights: a list of weight values at their current value
     indicies: the indices of the points selected in the viewport
@@ -519,7 +519,7 @@ def extractOMObject(mayaObject, OMObjectType="MItMeshVertex"):
 def getPointBoundingBox(flattenTx=False, flattenTy=False, flattenTz=False):
     """
     Get a bounding box based on points, gets the 2 furthest points
-    :param flattenTy: If true, will not pay attention to the ty position
+    ::param flattenTy: If true, will not pay attention to the ty position
     :return:
     """
     print(flattenTx, flattenTy, flattenTz)

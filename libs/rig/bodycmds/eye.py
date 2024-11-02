@@ -52,39 +52,39 @@ class create_eye():
                  ):
         """
         type  side:                string
-        param side:                usually C but L or R are also supported
+        :param side:                usually C but L or R are also supported
 
         type  name:                string
-        param name:                the names of your eye
+        :param name:                the names of your eye
 
         type  joint:               string array
-        param joint:               the eye joint that the rig will drive
+        :param joint:               the eye joint that the rig will drive
 
         type  driver:              string
-        param driver:              what the eye will be attached to
+        :param driver:              what the eye will be attached to
                                     usually the chest joint but anything that
                                     exists will work
 
         type  global_scale:        string
-        param global_scale:        what the eye will be attached to
+        :param global_scale:        what the eye will be attached to
                                     for scaling usually lowest point in
                                     hierarchy of global ctl
 
 
         type  skel_parent:          string
-        param skel_parent:          where to parent newly created joints,
+        :param skel_parent:          where to parent newly created joints,
                                      effectors, and generally things animators
                                      don't want to see.
 
         type  rig_parent:           string
-        param rig_parent:           where to parent ctls and other things
+        :param rig_parent:           where to parent ctls and other things
                                      animators would like to see
 
         type  ctl_size:             float
-        param ctl_size:             a size for the eye control
+        :param ctl_size:             a size for the eye control
 
         type  debug:                bool
-        param debug:                if debug is on, nothing will be locked and
+        :param debug:                if debug is on, nothing will be locked and
                                      ihi will remain 1
         """
 

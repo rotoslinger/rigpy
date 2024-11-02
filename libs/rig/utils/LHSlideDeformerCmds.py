@@ -28,56 +28,56 @@ class slideDeformerCmd():
                  ):
         """
         type  driverSurface:        string (nurbsSurface)
-        param driverSurface:        the name of the geo that will drive the
+        :param driverSurface:        the name of the geo that will drive the
                                      geometry, or the first selection
                                      
         type  weightGeo:            string (mesh)
-        param weightGeo:            the name of the geo that will be used to
+        :param weightGeo:            the name of the geo that will be used to
                                      raycast weighting
 
         type  weightBase:           string array
-        param weightBase:           Optional.  A copy of the geometry that will
+        :param weightBase:           Optional.  A copy of the geometry that will
                                      be deformed.  This allows weights to be 
                                      projected to a non moving geometry.  Very 
                                      important when you have multiple weight
                                      projecting deformers on the same mesh.
 
         type  geoms:                string array
-        param geoms:                the names of the geometry the will be deformed,
+        :param geoms:                the names of the geometry the will be deformed,
                                      or the second selection and beyond 
                                      can be mesh, nurbsSurface, or nurbsCurve
 
         type  control:              string
-        param control:              where to put attributes, usually a control
+        :param control:              where to put attributes, usually a control
                                      if unset attributes will be created on 
                                      the returned deformer
 
         type  ihi:                  int
-        param ihi:                  sets the deformer isHistoricallyIntersting to 0
+        :param ihi:                  sets the deformer isHistoricallyIntersting to 0
 
         type  lockAttrs:            int
-        param lockAttrs:            if set to 1 all attributes in return 
+        :param lockAttrs:            if set to 1 all attributes in return 
                                      deformer are locked and hidden
 
         type  side:                 string
-        param side:                 defaults to C but L and R are also acceptable
+        :param side:                 defaults to C but L and R are also acceptable
 
         type  uNames:               string array
-        param uNames:               the names of the u channels you want
+        :param uNames:               the names of the u channels you want
                                      the size of this array will determine how
                                      many value attributes, weight channels, and
                                      animation curve values are created
                                      example ['L_mouth', 'R_mouth']
         
         type  vNames:               string array
-        param vNames:               the names of the v channels you want
+        :param vNames:               the names of the v channels you want
                                      the size of this array will determine how
                                      many value attributes, weight channels, and
                                      animation curve values are created
                                      example ['L_mouth', 'R_mouth']
                                      
         type  uUseAnimCurves:       unsigned int array
-        param uUseAnimCurves:       determine whether you would like animation
+        :param uUseAnimCurves:       determine whether you would like animation
                                      curves to be created for weighting in each 
                                      u channel if a single int [1] is given, all 
                                      anim curves are created for all u names
@@ -89,7 +89,7 @@ class slideDeformerCmd():
                                      need anim curves
                                      
         type  vUseAnimCurves:       unsigned int array
-        param vUseAnimCurves:       determine whether you would like animation
+        :param vUseAnimCurves:       determine whether you would like animation
                                      curves to be created for weighting in each 
                                      v channel if a single int [1] is given, all 
                                      anim curves are created for all v names

@@ -54,45 +54,45 @@ class Shape(object):
 
         """
         type  side:                string
-        param side:                side the control is on C,L,R
+        :param side:                side the control is on C,L,R
         
         type  name:                string
-        param name:                name of the ctl
+        :param name:                name of the ctl
         
         type  parent:              string
-        param parent:              the transform this will be parented under
+        :param parent:              the transform this will be parented under
 
         type  shape_dict:          dictionary
-        param shape_dict:          a dictionary that can be used to rebuild a nurbs
+        :param shape_dict:          a dictionary that can be used to rebuild a nurbs
                                     curve shape check the "shape" module for reference
 
         type  lock_attrs:          string array
-        param lock_attrs:          the attribute names you want locked,
+        :param lock_attrs:          the attribute names you want locked,
                                     unkeyable, and hidden
 
         type  show_rot_order:      bool
-        param show_rot_order:          if true, rotation order is exposed as a 
+        :param show_rot_order:          if true, rotation order is exposed as a 
                                     non keyable attribute
 
         type  size:                float
-        param size:                average size of all points in ctl in units
+        :param size:                average size of all points in ctl in units
 
         type  orient:              float array
-        param orient:              x,y,z values you want to rotate the points
+        :param orient:              x,y,z values you want to rotate the points
                                     by.  These values will not be reflected in
                                     the transform of the control
         
         type  offset:              float array
-        param offset:              x,y,z values you want to translate the 
+        :param offset:              x,y,z values you want to translate the 
                                     points by.  These values will not be 
                                     reflected in the transform of the control
                                     
         type  scale:               float array
-        param scale:               x,y,z values you want to scale the 
+        :param scale:               x,y,z values you want to scale the 
                                     points by.  These values will not be 
                                     reflected in the transform of the control
         type  hide:                bool
-        param hide:                if true control visibility will be set to 0
+        :param hide:                if true control visibility will be set to 0
         """
 
         #---args
@@ -234,58 +234,58 @@ class Ctrl(object):
 
         """
         type  side:                string
-        param side:                the side the control is on C,L,R
+        :param side:                the side the control is on C,L,R
         
         type  name:                string
-        param name:                name of the ctl
+        :param name:                name of the ctl
         
         type  parent:              string
-        param parent:              the transform this will be parented under
+        :param parent:              the transform this will be parented under
 
         type  shape_dict:          dictionary
-        param shape_dict:          a dictionary that can be used to rebuild a nurbs
+        :param shape_dict:          a dictionary that can be used to rebuild a nurbs
                                     curve shape check the "shape" module for reference
 
         type  lock_attrs:          string array
-        param lock_attrs:          the attribute names you want locked,
+        :param lock_attrs:          the attribute names you want locked,
                                     unkeyable, and hidden
 
         type  num_buffer:          int
-        param num_buffer:          number of transforms to group ctl under
+        :param num_buffer:          number of transforms to group ctl under
 
         type  gimbal:              bool
-        param gimbal:              whether or not you want a gimbal control
+        :param gimbal:              whether or not you want a gimbal control
                                     not recommended for controls with less than
                                     all 3 rotation attributes
                                     
         type  num_secondary:       bool
-        param num_secondary:       creates extra controls which will be
+        :param num_secondary:       creates extra controls which will be
                                     parented under the main ctl
                                     
         type  show_rot_order:      string array
-        param show_rot_order:      the attribute names you want locked,
+        :param show_rot_order:      the attribute names you want locked,
                                     unkeyable, and hidden
 
         type  size:                float
-        param size:                average size of all points in ctl in units
+        :param size:                average size of all points in ctl in units
 
         type  orient:              float array
-        param orient:              x,y,z values you want to rotate the points
+        :param orient:              x,y,z values you want to rotate the points
                                     by.  These values will not be reflected in
                                     the transform of the control
 
         type  offset:              float array
-        param offset:              x,y,z values you want to translate the 
+        :param offset:              x,y,z values you want to translate the 
                                     points by.  These values will not be 
                                     reflected in the transform of the control
 
         type  scale:               float array
-        param scale:               x,y,z values you want to scale the 
+        :param scale:               x,y,z values you want to scale the 
                                     points by.  These values will not be 
                                     reflected in the transform of the control
 
         type  hide:                bool
-        param hide:                if True control will be hidden
+        :param hide:                if True control will be hidden
         """
 
         #---args

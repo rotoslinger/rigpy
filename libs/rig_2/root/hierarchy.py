@@ -18,7 +18,7 @@ class base(object):
                  ):
         """
         type  asset_name:                string
-        param asset_name:                asset name
+        :param asset_name:                asset name
         """
         #---args
         self.asset_name                   = asset_name

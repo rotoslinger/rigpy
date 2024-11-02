@@ -28,7 +28,7 @@ class meshData(object):
 
         """
         type  name:                        string
-        param name:                        name of the geo you want to get data from
+        :param name:                        name of the geo you want to get data from
         """
 
         #---args

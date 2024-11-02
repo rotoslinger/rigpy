@@ -23,10 +23,10 @@ class mirror_anim_curves():
                  ):
         """
         type  anim_curve:            list
-        param anim_curve:            anim curves     
+        :param anim_curve:            anim curves     
 
         type  side:                  string
-        param side:                  if "L" mirrors from timeline right to left
+        :param side:                  if "L" mirrors from timeline right to left
                                       if "R" mirrors from timeline left to right
                                       this happens under the assumption that you
                                       are looking at a character's face from the
@@ -36,11 +36,11 @@ class mirror_anim_curves():
                                       timeline, or the screen
 
         type  center_frame:          int
-        param center_frame:          the mirror axis, can be thought of as
+        :param center_frame:          the mirror axis, can be thought of as
                                       the scale pivot
 
         type  flip:                  bool
-        param flip:                  if False mirrors from left to right
+        :param flip:                  if False mirrors from left to right
         """
         #----args
         self.anim_curve                   = anim_curve
@@ -192,20 +192,20 @@ class copy_flip_anim_curves():
                  ):
         """
         type  side:                  string
-        param side:                  the side you are copying from
+        :param side:                  the side you are copying from
         
         type  source:                string
-        param source:                the curve to copy from
+        :param source:                the curve to copy from
 
         type  target:           string
-        param target:           the curve to copy to
+        :param target:           the curve to copy to
 
         type  center_frame:          int
-        param center_frame:          the mirror axis, can be thought of as
+        :param center_frame:          the mirror axis, can be thought of as
                                       the scale pivot
 
         type  flip:                  bool
-        param flip:                  if false only a regular copy is done
+        :param flip:                  if false only a regular copy is done
         """
         #----args
         self.side                         = side

@@ -79,69 +79,69 @@ class create_torso():
                  ):
         """
         type  side:                string
-        param side:                usually C but L or R are also supported
+        :param side:                usually C but L or R are also supported
 
         type  name:                string
-        param name:                the name of your torso
+        :param name:                the name of your torso
 
         type  root_joint:          string
-        param root_joint:          the root of the torso joint chain
+        :param root_joint:          the root of the torso joint chain
                                     usually this would be the root of the whole
                                     skeleton if you give an empty string ''
                                     I will try to find the root automatically,
                                     but no guarantees
 
         type  torso_joints:        string array
-        param torso_joints:        the torso joints that the rig will drive
+        :param torso_joints:        the torso joints that the rig will drive
 
         type  hip_joint:           string array
-        param hip_joint:           the joint that the rig will drive the hips
+        :param hip_joint:           the joint that the rig will drive the hips
                                     if an empty string '' no hip will be 
                                     created
 
         type  driver:              string
-        param driver:              what the shoulder will be attached to
+        :param driver:              what the shoulder will be attached to
                                     usually the chest joint but anything that
                                     exists will work
 
         type  global_scale:        string
-        param global_scale:        what the shoulder will be attached to
+        :param global_scale:        what the shoulder will be attached to
                                     for scaling usually lowest point in
                                     hierarchy of global ctl
 
         type  skel_parent:          string
-        param skel_parent:          where to parent newly created joints,
+        :param skel_parent:          where to parent newly created joints,
                                      effectors, and generally things animators
                                      don't want to see.
 
         type  rig_parent:           string
-        param rig_parent:           where to parent ctls and other things
+        :param rig_parent:           where to parent ctls and other things
                                      animators would like to see
 
         type  fwd_ctl_sizes:        float
-        param fwd_ctl_sizes:        a size for the torso control
+        :param fwd_ctl_sizes:        a size for the torso control
 
         type  rev_ctl_sizes:        float
-        param rev_ctl_sizes:        a size for the torso control
+        :param rev_ctl_sizes:        a size for the torso control
 
         type  ctl_orients:          float
-        param ctl_orients:          orientation for the controls
+        :param ctl_orients:          orientation for the controls
         
         type  ctl_offsets:          float
-        param ctl_offsets:          translation offset for the controls
+        :param ctl_offsets:          translation offset for the controls
 
         type  switch_size:          float
-        param switch_size:          switch size
+        :param switch_size:          switch size
         
         type  switch_orient:        float
-        param switch_orient:        switch orientation
+        :param switch_orient:        switch orientation
         
         type  switch_offset:        float
-        param switch_offset:        switch translation offset
+        :param switch_offset:        switch translation offset
 
 
         type  debug:                bool
-        param debug:                if debug is on, nothing will be locked and
+        :param debug:                if debug is on, nothing will be locked and
                                      ihi will remain 1
         """
 

@@ -60,13 +60,13 @@ class create_finger():
 
         """
         type  side:                 string
-        param side:                 usually L or R, though C is also supported
+        :param side:                 usually L or R, though C is also supported
 
         type  names:                string
-        param names:                the names of your fingers
+        :param names:                the names of your fingers
 
         type  joint_roots:          string array
-        param joint_roots:          the top root of the finger you want to 
+        :param joint_roots:          the top root of the finger you want to 
                                      create usually a joint chain of 5 which
                                      includes metacarpal_jnts.  If more than 
                                      five extra metacarpal_jnts will be created
@@ -74,35 +74,35 @@ class create_finger():
                                      will be created
 
         type  ignore_end_joints:    bool
-        param ignore_end_joints:    if True will ignore the last digit in the
+        :param ignore_end_joints:    if True will ignore the last digit in the
                                      joint chain, if False, all digits will be
                                      rigged.
 
         type  driver:               string
-        param driver:               what the fingers will be attached to
+        :param driver:               what the fingers will be attached to
                                      usually the hand or wrist joint, but 
                                      anything that exists will work
 
         type  global_scale:         string
-        param global_scale:         what the fingers will be attached to
+        :param global_scale:         what the fingers will be attached to
                                      for scaling usually lowest point in
                                      hierarchy of global ctl
 
 
         type  skel_parent:          string
-        param skel_parent:          where to parent newly created joints,
+        :param skel_parent:          where to parent newly created joints,
                                      effectors, and generally things animators
                                      don't want to see.
 
         type  rig_parent:           string
-        param rig_parent:           where to parent ctls and other things
+        :param rig_parent:           where to parent ctls and other things
                                      animators would like to see
 
         type  ctl_size:             2-d float array
-        param ctl_size:             a size for controls
+        :param ctl_size:             a size for controls
 
         type  debug:                bool
-        param debug:                if debug is on, nothing will be locked and
+        :param debug:                if debug is on, nothing will be locked and
                                      ihi will remain 1
         """
 

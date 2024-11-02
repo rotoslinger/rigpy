@@ -7,9 +7,9 @@ import maya.api.OpenMaya as om
 
 def vec_lerp(vec_a, vec_b, lerp_amt=0.5) -> om.MVector:
     '''
-    :param vec_a (om2.MVector): source
-    :param vec_b (om2.MVector): target
-    :param lerp_amt: A float (usually) between 0 and 1 to control the interpolation.
+    ::param vec_a (om2.MVector): source
+    ::param vec_b (om2.MVector): target
+    ::param lerp_amt: A float (usually) between 0 and 1 to control the interpolation.
                      Not clamped - so avoid unintentional over/undershooting.
     '''
     return ((vec_a - vec_b) * lerp_amt) + vec_a
@@ -17,9 +17,9 @@ def vec_lerp(vec_a, vec_b, lerp_amt=0.5) -> om.MVector:
 
 def vec_lerp_multi(vec_a, vec_b, lerp_amt_list):      
     '''
-    :param vec_a (om2.MVector): source
-    :param vec_b (om2.MVector): target
-    :param lerp_amt: (list): vals are floats, (usually) between 0 and 1 to control vector interp.
+    ::param vec_a (om2.MVector): source
+    ::param vec_b (om2.MVector): target
+    ::param lerp_amt: (list): vals are floats, (usually) between 0 and 1 to control vector interp.
                      Not clamped - so avoid unintentional over/undershooting.
     '''
     translation_tuples = []
@@ -35,7 +35,7 @@ def vec_lerp_multi(vec_a, vec_b, lerp_amt_list):
 
 def vector_lerp_weights(num_values, start=0.0, end=1.0):
     # generic linear interpolate
-    # L(t)=(1-t)·a+t·b lerp between two values, a and b, based on interp param t
+    # L(t)=(1-t)·a+t·b lerp between two values, a and b, based on interp :param t
     return [(start + (t * (end - start) / (num_values + 1))) for t in range(1, num_values + 1)]
 
 

@@ -142,7 +142,7 @@ def removeWeightMapOnObject(mayaObject=None,
 #     This function will find out if these paintable attributes actually exist on the object, if they do not, it will clear
 #     them from the paintable attributes.
 #     Finds all paintable attributes on a mesh, clear all, except the ones that actually exists
-#     :param mayaMesh: this needs to be the shape of a polygon mesh
+#     ::param mayaMesh: this needs to be the shape of a polygon mesh
 #     :return:
 #     """
 #     # First get all userDefined attributes of type kDoubleArray
@@ -178,10 +178,10 @@ def connectWeightMapToWeightNode(sourceMap=None, destWeightNode=None, sourceFact
 
     You can also provide other source and destination attributes for connections, but you don't have to.
 
-    :param sourceMap: a string of an attribute of type kDoubleArray
-    :param destWeightNode: the weightMap where you want to connect this weightMap
-    :param sourceFactor: a string of an attribute of type double
-    :param sourceOperationEnum: a string of an attribute of type enum (needs to have a length of 4 cases preferably with
+    ::param sourceMap: a string of an attribute of type kDoubleArray
+    ::param destWeightNode: the weightMap where you want to connect this weightMap
+    ::param sourceFactor: a string of an attribute of type double
+    ::param sourceOperationEnum: a string of an attribute of type enum (needs to have a length of 4 cases preferably with
             "add", "subtract", "multiply", "divide" as the names of the cases)
     :return:
     """

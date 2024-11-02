@@ -65,62 +65,62 @@ class create_leg():
 
         """
         type  side:                string
-        param side:                usually L or R, though C is also supported
+        :param side:                usually L or R, though C is also supported
 
         type  name:                string
-        param name:                the name of the rig
+        :param name:                the name of the rig
 
         type  joints:              string array
-        param joints:              a list of 3 joints (leg, knee, ankle)
+        :param joints:              a list of 3 joints (leg, knee, ankle)
 
         type  driver:              string
-        param driver:              what the leg will be attached to
+        :param driver:              what the leg will be attached to
                                     usually the bind clavical joint, but 
                                     anything that exists will work
 
         type  skel_parent:          string
-        param skel_parent:          where to parent newly created joints,
+        :param skel_parent:          where to parent newly created joints,
                                      effectors, and generally things animators
                                      don't want to see.
 
         type  rig_parent:           string
-        param rig_parent:           where to parent ctls and other things
+        :param rig_parent:           where to parent ctls and other things
                                      animators would like to see
 
         type  fk_ctl_size:          float array
-        param fk_ctl_size:          a size for leg, knee, and ankle controls
+        :param fk_ctl_size:          a size for leg, knee, and ankle controls
         
         type  twist_axis:           string
-        param twist_axis:           the axis the joint will be oriented along
+        :param twist_axis:           the axis the joint will be oriented along
                                      right now only "x" and "y" are supported 
 
         type  leg_splits:           int
-        param leg_splits:           amount of twist joints between the leg
+        :param leg_splits:           amount of twist joints between the leg
                                      and knee (2 are recommended)
 
         type  knee_splits:         int
-        param knee_splits:         amount of twist joints between the knee
+        :param knee_splits:         amount of twist joints between the knee
                                      and ankle (4 are recommended)
                                      
         type  global_scale:         string
-        param global_scale:         what the fingers will be attached to
+        :param global_scale:         what the fingers will be attached to
                                      for scaling usually lowest point in
                                      hierarchy of global ctl
 
 
         type  ik_space_names:       string array
-        param ik_space_names:       the names you would like to give your
+        :param ik_space_names:       the names you would like to give your
                                      space switches (cleaner way of naming than
                                      using the space parents)
 
         type  ik_space_parents:     string array
-        param ik_space_parents:     the things driving the ik control
+        :param ik_space_parents:     the things driving the ik control
                                      during space switching, I usually use
                                      bind joint names. Does not check for
                                      cycle errors so I need to be careful.
 
         type  debug:                bool
-        param debug:                if debug is on, nothing will be locked or
+        :param debug:                if debug is on, nothing will be locked or
                                      ihi set to 0
                                      
         """

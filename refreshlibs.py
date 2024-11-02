@@ -11,9 +11,9 @@ def copy_files_with_newer_timestamps(source_dir, destination_dir,
     Copy all files from source_dir to destination_dir recursively.
     Only copy files with newer timestamps or if they don't exist in the destination.
 
-    :param source_dir: The source directory to copy files from.
-    :param destination_dir: The destination directory to copy files to.
-    :param ignore_types: List of file and directory types to ignore.
+    ::param source_dir: The source directory to copy files from.
+    ::param destination_dir: The destination directory to copy files to.
+    ::param ignore_types: List of file and directory types to ignore.
     """
     # Normalize paths
     source_dir = os.path.normpath(source_dir)

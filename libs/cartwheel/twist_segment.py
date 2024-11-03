@@ -6,7 +6,7 @@ import maya.api.OpenMayaAnim as oma
 
 def vec_lerp(vec_a, vec_b, lerp_amt=0.5) -> om.MVector:
     '''
-    :param om.MVector vec_a : source vector 
+    :param om.MVector vec_a: source vector 
     :param om.MVector vec_b: target vector 
     :param float lerp_amt: A float (usually) between 0 and 1 to control the interpolation.
                      Not clamped - so avoid unintentional over/undershooting.
@@ -14,15 +14,23 @@ def vec_lerp(vec_a, vec_b, lerp_amt=0.5) -> om.MVector:
     return ((vec_a - vec_b) * lerp_amt) + vec_a
 
 
-def vec_lerp_multi(vec_a, vec_b, lerp_amt_list):      
+def vec_lerp_multi(vec_a, vec_b, lerp_amt_list) -> list:      
     '''
-    :param om.MVector vec_a: source
-    :param om.MVector vec_b: target
-    :param list lerp_amt: vals are floats, (usually) between 0 and 1 to control vector interp.
-                          Not clamped - so avoid unintentional over/undershooting.
+    Performs linear interpolation between two vectors for multiple weights.
+
+    This function calculates interpolated vectors based on a list of lerp amounts,
+    allowing for smooth transitions between two source vectors.
+
+    :param om.MVector vec_a: The source vector from which the lerp begins.
+    :param om.MVector vec_b: The target vector toward which the lerp proceeds.
+    :param list lerp_amt_list: A list of float values, usually between 0 and 1, that control
+                               the lerp amount. Values are not clamped, so care should
+                               be taken to avoid unintended over/undershooting.
+    
+    :return: A list of tuples representing the interpolated vectors, each as (tx, ty, tz).
+    :rtype: list of (float, float, float)
     '''
     translation_tuples = []
-
     for lerp_amt in lerp_amt_list:
         # Calculate the interpolated vector
         interpolated_vector = ((vec_b - vec_a) * lerp_amt) + vec_a
@@ -32,7 +40,22 @@ def vec_lerp_multi(vec_a, vec_b, lerp_amt_list):
 
     return translation_tuples
 
-def lerp_weights_generator(num_values=5, start=0.0, end=1.0):
+def generate_lerp_weights(num_values=5, start=0.0, end=1.0) -> tuple:
+    '''
+    Generates linear interpolation weights between two values.
+
+    Calculates lerp weights between a specified start and end value. The weights
+    are normalized for the use of transitional rotation, stretching, and shaping.
+
+    :param int num_values: Number of weights to generate. Default is 5.
+    :param float start: The starting value for the interpolation. Default is 0.0.
+    :param float end: The ending value for the interpolation. Default is 1.0.
+    
+    :return: A tuple containing two lists of weights; 
+             the first, weights moving away from the start value, toward the end 
+             the second, weights moving away from the end value, toward the start
+    :rtype: (list, list)
+    '''
     # TODO this is usually going to be normalized between 0-1 - may want to remove args
 
     # generic linear interpolate
@@ -64,20 +87,36 @@ def set_jnt_orient(jnt, orient):
     return joint_orient
 ### TODO REMOVE ###
 
-def clone_jnt(src_jnt, new_jnt_name, orient=None, parent=None) -> tuple: # type str,
-    translate = cmds.xform(src_jnt, query=True, worldSpace=True, translation=True)
-    if not orient:orient = cmds.getAttr(f'{src_jnt}.jointOrient')[0]
 
+def clone_jnt(src_jnt, new_jnt_name, orient=None, parent=None) -> tuple: # type str, f3tuple
+    '''
+    Meant to avoid cmds.duplicate - this func gives users more control
+    over how the orientation is handled. It also returns said orientation.
+    
+    :param str src_jnt: The source joint to clone.
+    :param str new_jnt_name: The name for the new joint.
+    :param str orient: Optional; the orientation for the new joint.
+    :param str parent: Optional; the parent joint for the new joint.
+    :return: A tuple of the new joint name and its orientation.
+    :rtype: tuple
+    '''
+
+    # important parent arg None at create for orient
     new_jnt = cmds.createNode('joint', name=new_jnt_name, parent=None)
-    cmds.xform(new_jnt, worldSpace=True, translation=translate)
-    cmds.setAttr(f'{new_jnt}.jointOrient', *orient, type='double3')
-    if parent:cmds.parent(new_jnt, parent)
-    # set_jnt_orient(jnt=new_jnt, orient=orient)
+    tmp_cons = cmds.parentConstraint(src_jnt, new_jnt)
+    cmds.delete(tmp_cons)
+    cmds.makeIdentity(new_jnt, apply=True,
+                      rotate=True, scale=True, jointOrient=False)
+    if not orient:
+        # get while in world.
+        orient = cmds.getAttr(f'{new_jnt}.jointOrient')[0]
+    if parent: new_jnt = cmds.parent(new_jnt, parent)[0]
+
     return new_jnt, orient
 
 def create_crv(pnts, name, parent, degree) -> str:
     crv = cmds.curve(p=pnts, d=degree, n=name)
-    if parent:cmds.parent(crv, parent)
+    if parent: crv = cmds.parent(crv, parent)[0]
     return crv 
 
 def create_crv_any(points, degree=3):
@@ -91,133 +130,228 @@ def create_crv_any(points, degree=3):
                       spans=6, degree=1, tolerance=0.01)
     return curve
 
+def blend_rotations(tw_jnts, no_tw_start_jnt, tw_end_jnt, name, weights) -> list: # returns list of constraints
+    tw_cnsts = []
+    for idx, tw_jnt in enumerate(tw_jnts):
+        tmp_cons = cmds.orientConstraint( no_tw_start_jnt, tw_end_jnt, tw_jnt ,#skip=['y','z'],
+                                         maintainOffset=True)
+        tw_cons=f'{name}_seg_tw_cns{idx:02}'
+        cmds.rename(tmp_cons, tw_cons)
+        print(f'{tw_cons}.w0', weights[0][idx])
+        print(f'{tw_cons}.w1', weights[1][idx])
+        cmds.setAttr(f'{tw_cons}.w0', weights[0][idx])
+        cmds.setAttr(f'{tw_cons}.w1', weights[1][idx])
+        tw_cnsts.append(tw_cons)
 
 ### TODO Class Method ### 
-
-
-def no_flip_tw_setup(anchor_jnt, no_flip_start_jnt, no_flip_end_jnt, name, component_parent, tw_jnts, weights):
+def no_flip_tw_setup(start_jnt, end_jnt, name,
+                     component_parent, ik_type = 'ikSCsolver') -> tuple:
     '''
-    :param str anchor_jnt: usually the no twist joint, the start of the transition
+    Single chain solver to avoid flipping. Avoids need for up vector.
+    No flip end used as an orient constraint target for transitional falloff
+
     :param str start_jnt: only used in naming
     :param str end_jnt: only used to position the handle container
     :param str component_parent: the root parent of the component
     :param list tw_jnts: a list of the twist jnts
     :param list weights: weights to be used as normalized influences in the twist orientConstraint
 
-    Single chain solver to avoid flipping. Avoids need for up vector.
-    No flip end used as an orient constraint target for transitional falloff
     '''
 
     handle_null = cmds.createNode('transform', name=f'{name}_SegNoFlipNll', parent=component_parent)
 
-    translate = cmds.xform(no_flip_end_jnt, query=True, translation=True, worldSpace=True)
+    translate = cmds.xform(end_jnt, query=True, translation=True, worldSpace=True)
     cmds.xform(handle_null, translation=translate, worldSpace=True)
     cmds.makeIdentity(handle_null, apply=True, translate=True)
 
-    handle, effector = cmds.ikHandle(startJoint=no_flip_start_jnt, endEffector=no_flip_end_jnt,
-                                     sol='ikSCsolver', sticky='sticky', name=f'{name}_SegNoFlipHdl')
-    cmds.parent(handle, handle_null)
-    cmds.rename(effector, f'{name}_SegNoFlipEff')
-    effector = f'{name}_SegNoFlipEff'
+    handle, effector = cmds.ikHandle(startJoint=start_jnt, endEffector=end_jnt,
+                                     sol=ik_type, sticky='sticky', name=f'{name}_seg_no_flip_hdl')
+    handle = cmds.parent(handle, handle_null)[0]
+    cmds.rename(effector, f'{name}_seg_no_flip_eff')
+    effector = f'{name}_seg_no_flip_eff'
     for attr in ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz']:
         cmds.setAttr(f'{handle}{attr}', lock=True)# avoid accidental movement
         cmds.setAttr(f'{effector}{attr}', lock=True)# avoid accidental movement
 
-    tw_cnsts = []
-    for idx, tw_jnt in enumerate(tw_jnts):
-        tmp_cons = cmds.orientConstraint(no_flip_end_jnt, anchor_jnt, tw_jnt , skip=['y','z'],
-                                         mo=False)
-        tw_cons=f'{name}_SegTwCns{idx:02}'
-        cmds.rename(tmp_cons, tw_cons)
-        print('WEIGHTS 0 : ', weights[0][idx])
-        print('WEIGHTS 1 : ', weights[1][idx])
-        print('\n')
-        print(f'{tw_cons}')
-
-
-        cmds.setAttr(f'{tw_cons}.w0', weights[0][idx])
-        cmds.setAttr(f'{tw_cons}.w1', weights[1][idx])
-
-        # [w0, w1]
-        tw_cnsts.append(tw_cons)
-
-        
-
     return handle_null, handle
 
 
-### TODO Class Method ###
-def create_twist_segment(start_joint, end_joint,
-                         component_parent=None, twist_parent=None,
-                         num_tw_jnts=5, suffix='Tw', no_tw_jnt=True,
-                         create_shaper_jnts=False,
-                         debug=True) -> list:
+def setup_bend_bow():
     '''
-    unintuitive args -
-    @:param component_parent: Twist Segment Component parent.
-    @:param tw_parent: this will be the influencing skeleton.
-    @:param tw_parent: this will be the influencing skeleton.
+    placeholder func for creating a sline ik to give bend bow functionality
+    '''
 
-    pargs given in order of parent,child - example: arm,elbow || elbow,hand
+
+def setup_stretch(start_jnt, end_goal, stretch_jnts, w1,
+                  no_flip_orient_jnt=None, name=None) -> None:
+    '''
+    Sets up world-space vector-based stretch joints.
+
+    This stretch technique works only with floating joints in world space.
+    Using joints in parent space will result in things not working properly.
+
+    :param (str) start_jnt: The name of the starting joint for the stretch setup.
+    :param (str) end_goal: The goal position to stretch towards in world space.
+    :param (list) stretch_jnts: A list of joint names that will be stretched.
+    :param (float) w1: The weight representing how far the end joint is from the start joint, 
+                       calculated using generate_lerp_weights.
+    :param (str) no_flip_orient_jnt: Optional; the joint used as a stable twist goal 
+                                       for ry and rz orientation. If not specified, 
+                                       the start joint will be used for orientation.
+    :param (str) name: Optional; a custom name for the setup.
+    '''
+    # collect any missing customization args
+    if not name: name = start_jnt
+    if not no_flip_orient_jnt: no_flip_orient_jnt = start_jnt
+
+    # translation from matrix for start and end joint
+    vec0 = cmds.createNode('translationFromMatrix', name=f'{name}_src_matrix')
+    vec1 = cmds.createNode('translationFromMatrix', name=f'{name}_tgt_matrix')
+    cmds.connectAttr(f'{start_jnt}.worldMatrix', f'{vec0}.input')
+    cmds.connectAttr(f'{end_goal}.worldMatrix', f'{vec1}.input')
+
+    # enter jnt loop
+    for idx, jnt in enumerate(stretch_jnts):
+        for trn, axis in zip(['tx','ty','tz'],['X','Y','Z']):
+            # too much typing, loop through axes
+            lerp=cmds.createNode('lerp', name=f'{name}_lerp_{trn}')
+
+            # ex: matrix0.outputX  -> lerpTx.input1
+            cmds.connectAttr(f'{vec0}.output{axis}', f'{lerp}.input1')
+            # ex: matrix1.outputX  -> lerpTx.input2
+            cmds.connectAttr(f'{vec1}.output{axis}', f'{lerp}.input2')
+
+            # ex: lerp.output -> joint.tx
+            cmds.connectAttr(f'{lerp}.output', f'{jnt}.{trn}')
+            # ex: set attr: lerp.weight -> 0.5 == 50% between matrix0 & matrix1)
+            cmds.setAttr(f'{lerp}.weight', round(w1[idx], 8))
+
+            # # orient constrain to ik
+            # cns=cmds.orientConstraint(no_flip_orient_jnt, jnt, 
+            #                             skip = 'x', maintainOffset=False)
+
+
+### TODO Class Method ###
+# this code here will work best in a class and should be converted 
+# whether in whole or in part.
+def create_twist_segment(start_bind_jnt, end_bind_jnt,
+                         end_attach=None, rig_parent=None,
+                         no_tw_jnt=True, num_tw_jnts=5, suffix='Tw', 
+                         create_shaper_jnts=False,
+                         debug=True) -> dict:
+    '''
+    Creates a twist segment joint chain between a start and end joint, with additional
+    twist joints for smooth deformation. This setup is commonly used in rigging for
+    creating flexible body parts, such as limbs or spines, which need to twist smoothly
+    over a range of joints.
+
+    pargs given in order of parent,child - example: arm,elbow or elbow,hand  
     If the component is LeftArm_Seg: LeftArm_Tw00-05 should be parented to LeftArm
 
-    twist segment : start jnt, end jnt, and n number of tw between the two.
-    hier : StartJnt->Tw00->Tw01->Tw02->Tw03->Tw05->EndJnt
-    return (tuple) : list of jnts
+    Start to End directions all go in the parent-> child direction
+          ↑  Neck  
+    RArm ← → LArm  
+          ↓  Spine  
+    RLeg  ↓  LLeg  
+
+    Structure:
+    - Twist segment: start joint, end joint, and n number of twist joints in between.
+    - Hierarchy: StartJnt-> Tw00-> Tw01-> Tw02-> Tw03-> Tw04 -> EndJnt.
+    - No-flip and shaper joint options for additional control.
+    - Debug mode includes additional joints for testing.
+
+    :param str start_bind_jnt: Start joint for the twist segment.
+    :param str end_bind_jnt: End joint for the twist segment.
+    :param str end_attach: Optional end attachment point for the segment.
+                           If None, defaults to end_bind_jnt
+    :param str rig_parent: Parent transform for the rig parts of the twist component.
+    :param bool no_tw_jnt: If True, includes a no-twist joint at the start. Default is True.
+    :param int num_tw_jnts: Number of twist joints to create between start and end. Default is 5.
+    :param str suffix: Name suffix for each twist joint. Default is 'Tw'.
+    :param bool create_shaper_jnts: If True, adds extra joints for shape control.
+    :param bool debug: Enables debug output and structure for testing. Default is True.
+
+    :return:
+        dict: Contains lists of created joints:
+            - 'segment_chain': Main twist segment chain.
+            - 'no_flip_parts': Components for the no-flip setup, including `ik_handle_null` and chain.
+            - 'shaper_chain': Extra joints for shaping.
+            - 'tw_jnts': Intermediate twist joints.
+            - 'infl_weight_linear': Linear influence weights.
     '''
-    vec_start = cmds.xform(start_joint, query=True, worldSpace=True, translation=True)
-    vec_end = cmds.xform(end_joint, query=True, worldSpace=True, translation=True)
+    vec_start = cmds.xform(start_bind_jnt, query=True, worldSpace=True, translation=True)
+    vec_end = cmds.xform(end_bind_jnt, query=True, worldSpace=True, translation=True)
     vec_start = om.MVector(vec_start)
     vec_end = om.MVector(vec_end)
     
-    w0,w1 = lerp_weights_generator(num_values=num_tw_jnts)
+    w0,w1 = generate_lerp_weights(num_values=num_tw_jnts)
     translations = vec_lerp_multi(vec_start, vec_end, w0)
     
+    component_root = cmds.createNode('transform', name=f'{start_bind_jnt}_segment_rig',
+                                     parent=rig_parent)
+
     # Primary chain start
-    seg_start_jnt, start_orient = clone_jnt(start_joint, f'{start_joint}_SegStart', component_parent)
-
-
+    seg_start_jnt, start_orient = clone_jnt(start_bind_jnt, f'{start_bind_jnt}_seg_start',
+                                            parent=component_root)
     # No flip chain
-    no_flip_start_jnt = clone_jnt(seg_start_jnt, f'{start_joint}_SegNoFlipStart', start_orient, seg_start_jnt)[0]
-    no_flip_end_jnt = clone_jnt(end_joint, f'{start_joint}_SegNoFlipEnd', start_orient, no_flip_start_jnt)[0]
+    tw_ik_start_jnt = clone_jnt(seg_start_jnt, f'{start_bind_jnt}_seg_ik_tw_start',
+                                  start_orient, seg_start_jnt)[0]
+    ### TODO FLIP TEST ###
+    # test - is inheriting the seg_start_jnt orient more stable?
+    tw_ik_end_jnt = clone_jnt(end_bind_jnt, f'{start_bind_jnt}_seg_ik_tw_end', 
+                                start_orient, tw_ik_start_jnt)[0]
+    # no_flip_end_jnt = clone_jnt(end_bind_jnt, f'{start_bind_jnt}_seg_no_flip_end', 
+    #                             no_flip_start_jnt)[0]
+
+    no_tw_ik_start_jnt = clone_jnt(seg_start_jnt, f'{start_bind_jnt}_seg_no_tw_start',
+                                  start_orient, seg_start_jnt)[0]
+    no_tw_ik_end_jnt = clone_jnt(end_bind_jnt, f'{start_bind_jnt}_seg_no_tw_end', 
+                                start_orient, tw_ik_start_jnt)[0]
 
     no_tw_shldr_jnt=None
+    no_tw_jnt=cmds.listRelatives(start_bind_jnt, parent=True)
+    if no_tw_jnt: no_tw_jnt = no_tw_jnt[0]
+    if not no_tw_jnt: no_tw_jnt = start_bind_jnt
+
     if no_tw_jnt:
-        no_tw_shldr_jnt = clone_jnt(start_joint, f'{start_joint}_SegStart', start_orient, component_parent)[0]
+        no_tw_shldr_jnt = clone_jnt(start_bind_jnt, f'{start_bind_jnt}_seg_start_jnt',
+                                    start_orient, component_root)[0]
+
         ### TODO REMOVE ###
-        if debug: cmds.parent(no_tw_shldr_jnt, no_flip_start_jnt)
-        if not debug: cmds.parent(no_tw_shldr_jnt, twist_parent)
+        # if debug: no_tw_shldr_jnt = cmds.parent(no_tw_shldr_jnt, no_flip_start_jnt)[0]
+        # if not debug: no_tw_shldr_jnt=cmds.parent(no_tw_shldr_jnt, start_bind_jnt)[0]
+        # no_tw_shldr_jnt=cmds.parent(no_tw_shldr_jnt, component_root)[0]
         ### TODO REMOVE ###
-        parent=cmds.listRelatives(start_joint, parent=True)
-        if parent:
-            ### TODO make sure to test flipping with single channel orient constraint ###
-            cmds.orientConstraint(parent, no_tw_jnt, skip=['y', 'z'], mo=True)
-    if not no_tw_jnt:
-        no_tw_shldr_jnt = seg_start_jnt
 
-
+        ### TODO FLIP TEST ###
+        # # make sure to test flipping with single channel orient constraint
+        cmds.orientConstraint(no_tw_jnt, no_tw_shldr_jnt, skip=['y', 'z'], mo=True)
+        ### TODO FLIP TEST ###
+    
     ### TODO REMOVE ###
-    dbg_chain_start=''
-    dbg_chain_end=''
-    if debug:
-        dbg_chain_start = clone_jnt(seg_start_jnt, f'{start_joint}_SegDbgStart', start_orient, seg_start_jnt)[0]
-        dbg_chain_end = clone_jnt(end_joint, f'{start_joint}_SegDbgEnd', start_orient, dbg_chain_start)[0]
+    # dbg_chain_start=''
+    # dbg_chain_end=''
+    # if debug:
+    #     dbg_chain_start = clone_jnt(seg_start_jnt, f'{start_bind_jnt}_seg_dbg_start',
+    #                                 start_orient, no_flip_start_jnt)[0]
+    #     dbg_chain_end = clone_jnt(end_bind_jnt, f'{start_bind_jnt}_seg_dbg_end',
+    #                               start_orient, dbg_chain_start)[0]
     ### TODO REMOVE ###
-
 
     tw_jnts=[]
     for idx in range(num_tw_jnts):
-        new_jnt = cmds.createNode('joint', parent=None, name=f'{start_joint}_{suffix}{idx:02}')
+        new_jnt = cmds.createNode('joint', parent=None,
+                                  name=f'{start_bind_jnt}_{suffix}{idx:02}')
         cmds.xform(new_jnt, worldSpace=True, translation=translations[idx])
         cmds.setAttr(f'{new_jnt}.jointOrient', *start_orient, type='double3')
 
         ### TODO REMOVE ###
-        if debug: cmds.parent(new_jnt, dbg_chain_start)
-        if not debug: cmds.parent(new_jnt, twist_parent)
+        # if debug: new_jnt = cmds.parent(new_jnt, dbg_chain_start)[0]
+        # if not debug: new_jnt = cmds.parent(new_jnt, start_bind_jnt)[0]
         ### TODO REMOVE ###
 
         ### TODO UNCOMMENT ###
-        #cmds.parent(new_jnt, twist_parent)
+        new_jnt=cmds.parent(new_jnt, component_root)[0]
         ### TODO UNCOMMENT ###
 
         tw_jnts.append(new_jnt)
@@ -230,50 +364,63 @@ def create_twist_segment(start_joint, end_joint,
     ### TODO REVALUATE ###
 
     # create the no flip setup
-    handle_null, handle = no_flip_tw_setup(no_tw_shldr_jnt, no_flip_start_jnt, no_flip_end_jnt,
-                                        name=start_joint, component_parent=seg_start_jnt,
-                                        tw_jnts=tw_jnts, weights=[w0,w1])
+    tw_ik_null_cons=''
+    if not end_attach: end_attach = end_bind_jnt
 
+    tw_ik_null, tw_ik_handle = no_flip_tw_setup(tw_ik_start_jnt, tw_ik_end_jnt,
+                                        name=start_bind_jnt, component_parent=seg_start_jnt,
+                                        tw_jnts=tw_jnts, weights=[w0,w1], ik_type='ikSCsolver')
+    no_tw_ik_null, no_tw_ik_handle = no_flip_tw_setup(no_tw_ik_start_jnt, no_tw_ik_end_jnt,
+                                        name=start_bind_jnt, component_parent=seg_start_jnt,
+                                        tw_jnts=tw_jnts, weights=[w0,w1], ik_type='ikRPsolver')
+
+
+    # fallback to end_bind_jnt if end_attach is not specified
+    if not end_attach: end_attach = end_bind_jnt
+    tw_ik_null_cons = cmds.parentConstraint(end_attach, tw_ik_null, mo=True)
+    no_tw_ik_null_cons = cmds.parentConstraint(end_attach, no_tw_ik_null, mo=True)
+
+    setup_stretch(start_jnt=tw_ik_start_jnt, end_goal=end_attach,
+                  stretch_jnts=tw_jnts, w1=w1, no_flip_orient_jnt=tw_ik_start_jnt,)
+
+    ### TODO ###
+    # no tw jnt needs to be rx constrained to either the parent of the 
+
+    
     shaper_jnts = []
     if create_shaper_jnts:
-        jnts_to_clone = [seg_start_jnt, *tw_jnts, end_joint]
+        jnts_to_clone = [seg_start_jnt, *tw_jnts, end_bind_jnt]
         for idx, jnt in enumerate(jnts_to_clone):
-            parent = seg_start_jnt
-            if idx > 0: parent = shaper_jnts[idx-1]
-            shaper_jnts.append(clone_jnt(jnt, f'{start_joint}ShaperJnt{idx:02}', start_orient, parent)[0])
-
+            no_tw_jnt = seg_start_jnt
+            if idx > 0: no_tw_jnt = shaper_jnts[idx-1]
+            shaper_jnts.append(clone_jnt(jnt, f'{start_bind_jnt}_shaper_jnt{idx:02}',
+                                         start_orient, no_tw_jnt)[0])
+        # create bend bow ik spline
+        setup_bend_bow()
     ### TODO REVALUATE ###
     # may not need
-    #crv_seg_linear = create_crv(pnts=[vec_start,vec_end], name=f'{start_joint}_LineCrv', degree=1, parent=component_parent) 
-    #crv_seg_nurbs = create_crv(pnts=[vec_start, *translations, vec_end], name=f'{start_joint}_ShaperCrv', degree=1, parent=component_parent) 
-    #create_normalized_curve([vec_start, *translations, vec_end])
+    # crv_seg_linear = create_crv(pnts=[vec_start,vec_end],name=f'{start_joint}_LineCrv',
+    #                             degree=1, parent=component_parent) 
+    # crv_seg_nurbs = create_crv(pnts=[vec_start, *translations, vec_end],
+    #                            name=f'{start_joint}_ShaperCrv',
+    #                            degree=1, parent=component_parent) 
+    # create_normalized_curve([vec_start, *translations, vec_end])
     ### TODO REVALUATE ###
 
     # return map:
-    # out_joints = {'segment_chain':[seg_start_jnt,seg_end_jnt],
-    out_joints = {'segment_chain':[seg_start_jnt],
-                  'no_flip_parts': {'chain':[no_flip_start_jnt, no_flip_end_jnt],
-                                    'ik_handle_null':handle_null,
-                                    'ik_handle_null':handle},
-                  'shaper_chain':shaper_jnts,
-                  'tw_jnts':tw_jnts,                
-                  'infl_weight_linear':[w0,w1]}
-
+    tw_map = {'segment_chain':[seg_start_jnt],
+            'no_flip_parts': {'chain':[tw_ik_start_jnt, tw_ik_end_jnt],
+                            'tw_ik':[tw_ik_null,tw_ik_handle],
+                            'no_tw_ik':[no_tw_ik_null,no_tw_ik_handle],
+                            'handle_null_cons':tw_ik_null_cons},
+            'shaper_chain':shaper_jnts,
+            'tw_jnts':tw_jnts,                
+            'infl_weight_linear':[w0,w1]}
+    ### TODO REMOVE ###
     #if debug: print(json.dumps(out_joints, indent=4))
+    ### TODO REMOVE ###
 
-    return out_joints
-
-
-
-
-def tw_jnts():
-    '''
-    rpSolver ik handle for no flip.
-    Constrain jnt Rx to start_jnt/end-effector
-    Use vec_wts & 1-vec_wts as the w0 and w1.
-    '''
-
-
+    return tw_map
 
 
 def jnt_shaper_curve_attach():

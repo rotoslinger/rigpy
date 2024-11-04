@@ -1,7 +1,7 @@
 import os
-from PySide6 import QtWidgets, QtCore, QtGui
+from PySide2 import QtWidgets, QtCore, QtGui
 from maya import OpenMayaUI as OpenMayaUI
-from shiboken6 import wrapInstance
+from shiboken2 import wrapInstance
 from maya import cmds
 class Node_Scratch_Panel(QtWidgets.QWidget):
 

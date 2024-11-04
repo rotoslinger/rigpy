@@ -8,14 +8,14 @@ class HelpBox(QtWidgets.QWidget):
     def __init__(self, parent=None, textContent = None, fillColor = None, textColor = "white", btnXFillColor = None,
                  btnXTextColor = None, btnXCharacter = "", collapseWidget = None):
         """
-        ::param parent: parent widget
-        ::param textContent: string to be displayed in the text box
-        ::param fillColor: base fill color for the box. Default = [120, 60, 60]
-        ::param textColor: text color for the box content. Default = "white"
-        ::param btnXFillColor: fill color for the X button. Default is brighter than fillColor
-        ::param btnXTextColor: text color for the X button. Default is brighter than textColor
-        ::param btnXCharacter: character to use for the X button. Default ""
-        ::param collapseWidget: the collapseWidget of the helpbox. When you show hide the helpbox
+        :param parent: parent widget
+        :param textContent: string to be displayed in the text box
+        :param fillColor: base fill color for the box. Default = [120, 60, 60]
+        :param textColor: text color for the box content. Default = "white"
+        :param btnXFillColor: fill color for the X button. Default is brighter than fillColor
+        :param btnXTextColor: text color for the X button. Default is brighter than textColor
+        :param btnXCharacter: character to use for the X button. Default ""
+        :param collapseWidget: the collapseWidget of the helpbox. When you show hide the helpbox
                                you want to properly manage the visibility of the helpBox button
                                in this widget, and you need to be able to reach the button and
                                check if the section is collapsed or not

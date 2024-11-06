@@ -38,21 +38,21 @@ class lock_attrs():
 
         """
         type  node:                string
-        :param node:                name of the node that will have attrs 
+        param node:                name of the node that will have attrs 
                                     locked
 
         type  attr:                string
-        :param attr:                attribute names if "all" will use
+        param attr:                attribute names if "all" will use
                                     translates, rotates and scales
 
         type  l:                   bool
-        :param l:                   lock
+        param l:                   lock
 
         type  k:                   bool
-        :param k:                   keyable
+        param k:                   keyable
 
         type  cb:                  bool
-        :param cb:                  channel box
+        param cb:                  channel box
         """
 
         #---args
@@ -95,7 +95,7 @@ class create_rig_hier():
                  name = "character"):
         """
         type  name:                string
-        :param name:                character name
+        param name:                character name
         """
         #---args
         self.name                   = name
@@ -243,11 +243,11 @@ class snap_pivots():
 
         """
         type  target:                string
-        :param target:                name of the transform that will be 
+        param target:                name of the transform that will be 
                                       snapped to (driver)
 
         type  source:                string array
-        :param source:                names of the transforms that will be
+        param source:                names of the transforms that will be
                                       snapped (driven)
         """
 
@@ -354,19 +354,19 @@ class create_space_switches():
         "gets the distance between 2 transforms"
         """
         type  ctl:                  string array
-        :param ctl:                  name of the ctl that will have the space
+        param ctl:                  name of the ctl that will have the space
                                      switch attrs
 
         type  ctl_grp:              string array
-        :param ctl_grp:              name of the group above the ctl
+        param ctl_grp:              name of the group above the ctl
         
         type  space_names:          string array
-        :param space_names:          the names you would like to give your
+        param space_names:          the names you would like to give your
                                      space switches (cleaner way of naming than
                                      using the space parents)
 
         type  space_parents:        string array
-        :param space_parents:        the things driving the ik control
+        param space_parents:        the things driving the ik control
                                      during space switching, I usually use
                                      bind joint names. Does not check for
                                      cycle errors so I need to be careful.
@@ -493,20 +493,20 @@ class create_fk_align():
                  ):
         """
         type  ctl:                  string array
-        :param ctl:                  name of the ctl that will have the space
+        param ctl:                  name of the ctl that will have the space
                                      switch attrs
 
         type  ctl_grp:              string array
-        :param ctl_grp:              name of the group above the ctl
+        param ctl_grp:              name of the group above the ctl
 
         type  default_align_parent: string array
-        :param default_align_parent: usually the name of the group above the 
+        param default_align_parent: usually the name of the group above the 
                                      ctl_grp or anything you want to be the 
                                      to be aligned to by default
 
 
         type  skel_group:           string array
-        :param skel_group:           the group where you parent your skeleton
+        param skel_group:           the group where you parent your skeleton
         """
 
         #---args
@@ -1070,7 +1070,7 @@ def getGeoData(mayaObject=None):
 def createGeoFromData(geomDict=None, name=None, parent=None):
     """
     Creates geometry based on a dictionary created from exportUtils
-    :param geomDict: dictionary of geometry
+    param geomDict: dictionary of geometry
     @return: 
     """
     if (geomDict["type"] == "nurbsSurface"):
@@ -1292,7 +1292,7 @@ def getClosestPointOnCurve(curve, position):
     util = OpenMaya.MScriptUtil()
     util.createFromInt(0)
     util = OpenMaya.MScriptUtil()
-    :param = util.asDoublePtr()
+    param = util.asDoublePtr()
     closest_point = fnCurve.closestPoint(point_to_check, param, OpenMaya.MSpace.kWorld)
 
     return [closest_point.x, closest_point.y, closest_point.z]

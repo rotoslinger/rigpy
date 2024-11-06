@@ -370,6 +370,15 @@ def create_twist_segment(start_bind_jnt, end_bind_jnt,
                                          start_orient, no_tw_jnt)[0])
         # create bend bow ik spline
         setup_bend_bow()
+    ### TODO REVALUATE ###
+    # may not need
+    # crv_seg_linear = create_crv(pnts=[vec_start,vec_end],name=f'{start_joint}_LineCrv',
+    #                             degree=1, parent=component_parent) 
+    # crv_seg_nurbs = create_crv(pnts=[vec_start, *translations, vec_end],
+    #                            name=f'{start_joint}_ShaperCrv',
+    #                            degree=1, parent=component_parent) 
+    # create_normalized_curve([vec_start, *translations, vec_end])
+    ### TODO REVALUATE ###
 
     # return map:
     tw_map = {'segment_chain':[seg_start_jnt],
@@ -486,175 +495,3 @@ def print_b_spline(w0, scale_length=50):
     for value in w0:
         num_hashes = int(value * scale_factor)
         print('#' * num_hashes)
-
-
-
-# usage
-# bezier_points = bezier_curve_with_symmetric_handles(y_coords=[0,1,0], handle_lengths=[0,1,0], num_samples=10)
-# y =[y[0] for y in bezier_points]
-# print(y)
-# # Generate and print the bell curve
-# print_b_spline(y)
-
-
-
-# # Example call
-# twist_segment.create_twist_segment(start_joint='LeftArm',
-#                                    end_joint='LeftForeArm',
-#                                    parent=None,
-#                                    num_tw_jnts=5, suffix='Tw',)
-
-r'''
-
-twist segment, prototype that has a start jnt, end jnt, and n number of tw between the two.
-
-Hier looks like : StartJnt->Tw00->Tw01->Tw02->Tw03->Tw05->EndJnt  (all parented to StartJnt).
-
-Twist count isn't limited but defaults to 5.
-
-StartJnt, EndJnt are parentConstrained to  LeftArm, LeftForeArm.
-
-As the arm jnts move or rotate you get twist and stretch between.
-
-You don't have to worry about multiple IK/FK joint chains because these could be constrained to your skin joints.
-
-The idea is that it doesn't interfere with any structural rigging
-
-goes along for the ride without creating any dependencies or complicating any IK/FK switching.
-
-'''
-
-
-
-
-
-
-
-
-
-
-def bezier_curve_with_symmetric_handles(y_points, handle_lengths, num_samples):
-    """
-    Generate points for a cubic Bézier curve with symmetric handles.
-
-    Parameters:
-    - y_points: list of three floats [y0, y1, y2] for the control points.
-    - handle_lengths: list of three floats [h0, h1, h2] for the handle lengths.
-    - num_samples: int - The number of output points along the curve.
-
-    Returns:
-    - bezier_points: List of tuples representing the points on the Bézier curve.
-    """
-    # Control points for the cubic Bézier spline
-    P0 = (0, y_points[0])  # Starting point
-    P1 = (-handle_lengths[0], y_points[0])  # Control point 1 influenced by handle length to the left
-    P2 = (0, y_points[1])  # Control point 2 at the midpoint
-    P3 = (handle_lengths[1], y_points[1])  # Control point 3 influenced by handle length to the right
-    P4 = (handle_lengths[2], y_points[2])  # End point
-
-    bezier_points = []
-
-    # Calculate points along the cubic Bézier curve
-    for t in range(num_samples + 1):
-        t /= num_samples
-        
-        # Cubic Bézier formula
-        x = (1 - t) ** 4 * P0[0] + \
-            4 * (1 - t) ** 3 * t * P1[0] + \
-            6 * (1 - t) ** 2 * t ** 2 * P2[0] + \
-            4 * (1 - t) * t ** 3 * P3[0] + \
-            t ** 4 * P4[0]
-        
-        y = (1 - t) ** 4 * P0[1] + \
-            4 * (1 - t) ** 3 * t * P1[1] + \
-            6 * (1 - t) ** 2 * t ** 2 * P2[1] + \
-            4 * (1 - t) * t ** 3 * P3[1] + \
-            t ** 4 * P4[1]
-        
-        bezier_points.append((x, y))
-    
-    return bezier_points
-
-# Example usage
-y_coords = [0, 2, 0]            # Y coordinates for control points
-handle_lengths = [1, 1, 1]      # Lengths for the symmetric handles
-num_samples = 20                 # Number of points to generate
-
-bezier_points = bezier_curve_with_symmetric_handles(y_coords, handle_lengths, num_samples)
-
-# Print the resulting points
-print(bezier_points)
-
-# Visualize the Bézier output
-def print_bezier_curve(bezier_points, scale_length=30):
-    y_values = [y for _, y in bezier_points]
-    max_val = max(y_values) if y_values else 1  # Prevent division by zero
-    scale_factor = scale_length / max_val
-
-    for value in y_values:
-        num_hashes = int(value * scale_factor)
-        print('#' * num_hashes)
-
-# Visualizing the Bézier curve
-print_bezier_curve(bezier_points)
-
-
-
-
-
-
-
-def rig_arm_split(ik_jnts, tw_jnts, bind_jnt, split_arm_jnt, side, skel_parent, arm_clusters_grp, elbow_clusters_grp):
-    from_point = cmds.xform(ik_jnts[0], q=True, ws=True, t=True)
-    to_point = cmds.xform(ik_jnts[1], q=True, ws=True, t=True)
-
-    arm_curve = cmds.curve(name=f'{side}_arm_CRV', d=1, p=(from_point, to_point))
-    cmds.setAttr(f'{arm_curve}.inheritsTransform', 0)
-    cmds.parent(arm_curve, skel_parent)
-    cmds.setAttr(f'{arm_curve}.v', 0)
-
-    arm_from_grp = cmds.createNode('transform', name=f'{side}_armFrom_GRP', parent=skel_parent)
-    arm_from_loc = cmds.spaceLocator(name=f'{side}_armFrom_LOC')[0]
-    cmds.parent(arm_from_loc, arm_from_grp)
-    cmds.move(from_point[0], from_point[1], from_point[2], arm_from_grp, ws=True)
-
-    arm_from_cls = cmds.cluster(f'{arm_curve}.cv[0]', name=f'{side}_armFrom_CLS', wn=(arm_from_loc, arm_from_loc), bindState=True)
-    arm_from_cls_handle = arm_from_cls[1]  # Assign the cluster handle directly
-    cmds.rename('clusterHandleShape', f'{side}_armFrom_CLSShape')
-
-    arm_to_grp = cmds.createNode('transform', name=f'{side}_armTo_GRP', parent=skel_parent)
-    arm_to_loc = cmds.spaceLocator(name=f'{side}_armTo_LOC')[0]
-    cmds.parent(arm_to_loc, arm_to_grp)
-    cmds.move(to_point[0], to_point[1], to_point[2], arm_to_grp, ws=True)
-
-    arm_to_cls = cmds.cluster(f'{arm_curve}.cv[1]', name=f'{side}_armTo_CLS', wn=(arm_to_loc, arm_to_loc), bindState=True)
-    arm_to_cls_handle = arm_to_cls[1]  # Assign the cluster handle directly
-    cmds.rename('clusterHandleShape', f'{side}_armTo_CLSShape')
-
-    ik_handle = cmds.ikHandle(sj=bind_jnt, ee=split_arm_jnt, sol='ikSplineSolver', c=arm_curve, name=f'{side}_armIKSpine_IKH')[0]
-
-    cmds.setAttr(f'{ik_handle}.dTwistControlEnable', 1)
-    cmds.setAttr(f'{ik_handle}.dWorldUpType', 4)
-    cmds.setAttr(f'{ik_handle}.dWorldUpVectorY', 0)
-    cmds.setAttr(f'{ik_handle}.dWorldUpVectorEndY', 0)
-    cmds.setAttr(f'{ik_handle}.dWorldUpVectorZ', 1)
-    cmds.setAttr(f'{ik_handle}.dWorldUpVectorEndZ', 1)
-    cmds.setAttr(f'{ik_handle}.dWorldUpAxis', 3)
-
-    # Connect world matrices for world up vectors
-    cmds.connectAttr(f'{arm_from_cls_handle}.worldMatrix[0]', f'{ik_handle}.dWorldUpMatrix', f=True)
-    cmds.connectAttr(f'{arm_to_cls_handle}.worldMatrix[0]', f'{ik_handle}.dWorldUpMatrixEnd', f=True)
-
-    cmds.parent(arm_clusters_grp[1], ik_handle)
-    cmds.parent(elbow_clusters_grp[0], bind_jnt)
-    cmds.parent(elbow_clusters_grp[1], ik_handle)
-
-    cmds.setAttr(f'{arm_clusters_grp[0]}.v', 0)
-    cmds.setAttr(f'{elbow_clusters_grp[0]}.v', 0)
-    cmds.setAttr(f'{arm_clusters_grp[1]}.v', 0)
-    cmds.setAttr(f'{elbow_clusters_grp[1]}.v', 0)
-    cmds.setAttr(f'{arm_curve}.v', 0)
-
-# Usage
-# Call the function with specific parameters for the arm rigging
-rig_arm_split(ik_jnts, tw_jnts, bind_jnt, split_arm_jnt, 'L', skel_parent, arm_clusters_grp, elbow_clusters_grp)

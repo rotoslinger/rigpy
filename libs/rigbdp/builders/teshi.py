@@ -19,7 +19,7 @@ for mod in MODULES:
 # sdk_utils.export_sdks(filepath=r'C:\Users\harri\Documents\BDP\cha_input\teshi\sdk_data.json')
 
 # Initialize the RigMerger instance with file paths
-MnM_rig_path_2024 = r'C:\Users\harri\Documents\BDP\cha_input\teshi\teshi_RIG_200_v009_MnM.ma'
+MnM_rig_path_2024 = r'C:\Users\harri\Documents\BDP\cha_input\teshi\teshi_011.mb'
 MnM_rig_path_2022 = r'C:\Users\harri\Documents\BDP\cha_input\teshi\teshi_RIG_200_v009_maya2022_MnM.ma'
 
 rig_merge = rigbuild_mini.RigMerge(
@@ -28,7 +28,7 @@ rig_merge = rigbuild_mini.RigMerge(
     MnM_rig_path_2022=MnM_rig_path_2022,
     corrective_mel_path=r'C:\Users\harri\Documents\BDP\cha_input\teshi\SHAPES\M_teshi_base_body_geoShapes_blendShape.mel',
     sdk_data_path=r'C:\Users\harri\Documents\BDP\cha_input\teshi\sdk_data.json',
-    build_output_path=r'C:\Users\harri\Documents\BDP\cha_output\teshi\teshi_RIG_200_v010.ma',
+    build_output_path=r'C:\Users\harri\Documents\BDP\cha_output\teshi\teshi_RIG_200_v011.ma',
     joint_vis_prefs=False,
 )
 
@@ -40,6 +40,8 @@ bdp_rig_mods.BDP_outSkel_rigMod()
 
 # 2. Import correctives
 rig_merge.import_correctives()
+cmds.setAttr("preferences.showClothes", 1)
+# doDetachSkin 3 { "1", "1", "1" };
 
 # --- pre sdk scripts
 

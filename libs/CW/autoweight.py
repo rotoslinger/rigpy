@@ -1,54 +1,180 @@
+
+import maya.cmds as cmds
 import maya.api.OpenMaya as om
+import maya.cmds as cmds
+import maya.cmds as cmds
 
-# Get the MObject for a mesh
-def get_dag_path(obj_name):
-    selection_list = om.MSelectionList()
-    selection_list.add(obj_name)
-    return selection_list.getDagPath(0)
+import maya.cmds as cmds
+import maya.cmds as cmds
 
-# Replace 'pSphere1' with the name of your mesh object
-mesh_name = 'pSphere1'
-dag_path = get_dag_path(mesh_name)
+def analyze_and_sort_joints(joints):
+    """
+    Analyze a cloud of joints to determine if it is longer along the X or Y axis.
+    Sorts the joints based on the primary axis and determines the axis direction.
 
-# Create the MItMeshVertex iterator
-vertex_iter = om.MItMeshVertex(dag_path)
+    Args:
+        joints (list): List of joint names.
 
-# Iterate over each vertex in the mesh
-while not vertex_iter.isDone():
-    # Get the vertex position
-    position = vertex_iter.position(om.MSpace.kWorld)
-    print(f'Vertex {vertex_iter.index()}: Position = {position}')
+    Returns:
+        tuple: (sorted_joints, primary_axis, axis_direction), where:
+            - sorted_joints (list): List of joints ordered by position along the primary axis.
+            - primary_axis (str): The primary axis ('x' or 'y') based on the longest dimension.
+            - axis_direction (str): Direction ('+' or '-') based on the orientation of the sorted joints.
+    """
+    if not joints:
+        return [], None, None
+
+    # Determine the bounding box for the cloud of joints
+    x_positions = [cmds.xform(joint, q=True, ws=True, t=True)[0] for joint in joints]
+    y_positions = [cmds.xform(joint, q=True, ws=True, t=True)[1] for joint in joints]
+
+    # Calculate the length of the bounding box in X and Y directions
+    x_length = max(x_positions) - min(x_positions)
+    y_length = max(y_positions) - min(y_positions)
+
+    # Determine the primary axis
+    primary_axis = 'x' if x_length > y_length else 'y'
+    axis_index = 0 if primary_axis == 'x' else 1
+
+    # Determine the side if primary axis is X
+    if primary_axis == 'x':
+        avg_x_position = sum(x_positions) / len(x_positions)
+        side = 'left' if avg_x_position < 0 else 'right'
+        
+        # Set sort order based on side
+        if side == 'left':
+            sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[axis_index], reverse=True)
+            axis_direction = '-x'  # highest to lowest for left side
+        else:
+            sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[axis_index])
+            axis_direction = '+x'  # lowest to highest for right side
     
-    # Move to the next vertex
-    vertex_iter.next()
+    else:  # primary_axis == 'y'
+        sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[axis_index], reverse=True)
+        axis_direction = '-y'  # always highest to lowest for Y axis
 
+    return sorted_joints, primary_axis, axis_direction
 
-def get_closest_point_on_curve(curve_name, point):
-    # Get the MObject for the curve
+def create_crv_any(self, points, degree=3):
+    num_cvs = len(points)
+    required_knots = num_cvs + degree - 1
+    knots = [i / (required_knots - 1) for i in range(required_knots)]
+    curve = cmds.curve(p=points, k=knots, d=degree)
+    cmds.rebuildCurve( curve, replaceOriginal=True,
+                    #rebuildType=0, endKnots=1, keepControlPoints=False,
+                    keepRange=0, keepEndPoints=False, keepTangents=0,
+                    spans=6, degree=1, tolerance=0.01)
+    return curve
+
+def curve_from_joints(joints):
+    joints = analyze_and_sort_joints(joints)[0]
+    points = []
+    for jnt in joints:
+        points.append(cmds.xform(jnt, query=True, translate=True))
+
+def get_dag_path(object_name):
+    # Utility function to get the DAG path of an object
     selection_list = om.MSelectionList()
-    selection_list.add(curve_name)
-    curve_dag_path = selection_list.getDagPath(0)
+    selection_list.add(object_name)
+    dag_path = selection_list.getDagPath(0)
+    return dag_path
 
-    # Create an MFnNurbsCurve function set for the curve
+
+def get_curve_side(curve_name, mesh_name):
+    # Get bounding box of the curve
+    curve_bbox = cmds.exactWorldBoundingBox(curve_name)
+    curve_center_x = (curve_bbox[0] + curve_bbox[3]) / 2  # X-center of the curve bounding box
+    
+    # Get bounding box of the mesh
+    mesh_bbox = cmds.exactWorldBoundingBox(mesh_name)
+    mesh_center_x = (mesh_bbox[0] + mesh_bbox[3]) / 2  # X-center of the mesh bounding box
+
+    # Determine side: If the curve center is to the left (-X) of the mesh center, it's on the left; else, right
+    side = 'left' if curve_center_x < mesh_center_x else 'right'
+    return side, curve_bbox
+
+def find_points_within_bounds(curve_name, mesh_name):
+    # Determine side and get the bounding box of the curve
+    side, curve_bbox = get_curve_side(curve_name, mesh_name)
+
+    # Set the X limit based on which side the curve is on
+    x_limit = curve_bbox[0] if side == 'left' else curve_bbox[3]  # Use min X for left side, max X for right side
+
+    # Get the mesh's DAG path and initialize an iterator for its vertices
+    mesh_dag_path = get_dag_path(mesh_name)
+    vertex_iter = om.MItMeshVertex(mesh_dag_path)
+
+    within_bounds_indices = []
+
+    # Iterate over each vertex in the mesh
+    while not vertex_iter.isDone():
+        # Get the vertex position in world space
+        vertex_position = vertex_iter.position(om.MSpace.kWorld)
+
+        # Check if the vertex is within the bounding box X limit
+        if (side == 'left' and vertex_position.x >= x_limit) or (side == 'right' and vertex_position.x <= x_limit):
+            within_bounds_indices.append(vertex_iter.index())  # Store the index if within bounds
+
+        # Move to the next vertex
+        vertex_iter.next()
+
+    return within_bounds_indices
+
+########################################## USAGE ##########################################
+# curve_name = 'curve1'
+# mesh_name = 'pSphere1'
+# within_bounds_indices = find_points_within_bounds(curve_name, mesh_name)
+
+# # Create a list to hold the vertex selection strings
+# vertex_selection = []
+
+# # Iterate through the returned indices and format them as vertex selection strings
+# for index in within_bounds_indices:
+#     vertex_selection.append(f'{mesh_name}.vtx[{index}]')
+
+# # Select the vertices using cmds.select
+# cmds.select(vertex_selection)
+
+# # Output the selected vertices
+# print("Selected vertices:", vertex_selection)
+###########################################################################################
+
+def closest_mesh_points_on_curve(curve_name, mesh_name):
+    # Get the MObject for the curve
+    curve_dag_path = get_dag_path(curve_name)
     curve_fn = om.MFnNurbsCurve(curve_dag_path)
 
-    # Convert the input point to an MPoint
-    target_point = om.MPoint(point[0], point[1], point[2])
+    # Get the MObject for the mesh and create an iterator for its vertices
+    mesh_dag_path = get_dag_path(mesh_name)
+    vertex_iter = om.MItMeshVertex(mesh_dag_path)
 
-    # Find the closest point on the curve
-    closest_point = curve_fn.closestPoint(target_point, space=om.MSpace.kWorld)
+    closest_points = {}
 
-    # Get the parameter at the closest point on the curve
-    param = curve_fn.findParamFromPoint(closest_point, space=om.MSpace.kWorld)
+    # Iterate over each vertex in the mesh
+    while not vertex_iter.isDone():
+        # Get the vertex position
+        vertex_position = vertex_iter.position(om.MSpace.kWorld)
+        
+        # Find the closest point on the curve to this vertex position
+        closest_point = curve_fn.closestPoint(vertex_position, space=om.MSpace.kWorld)
+        
+        # Get the parameter at the closest point on the curve
+        param = curve_fn.findParamFromPoint(closest_point, space=om.MSpace.kWorld)
+        
+        # Store the closest point and parameter for the vertex
+        closest_points[vertex_iter.index()] = (closest_point, param)
+        
+        # Move to the next vertex
+        vertex_iter.next()
+    
+    return closest_points
 
-    return closest_point, param
-
-# Example usage
-curve_name = 'nurbsCurve1'  # Replace with your curve's name
-point = (1.0, 2.0, 3.0)     # Replace with your target point
-closest_point, param = get_closest_point_on_curve(curve_name, point)
-print(f"Closest point: {closest_point}")
-print(f"Parameter at closest point: {param}")
+# # Example usage
+# curve_name = 'nurbsCurve1'  # Replace with your curve's name
+# mesh = 'mesh'    # Replace with your target point
+# closest_point, param = closest_mesh_points_on_curve(curve_name, mesh)
+# print(f"Closest point: {closest_point}")
+# print(f"Parameter at closest point: {param}")
 
 '''
 Long Triangle Arrows

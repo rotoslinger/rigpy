@@ -1,11 +1,7 @@
-
+import json
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
-import maya.cmds as cmds
-import maya.cmds as cmds
 
-import maya.cmds as cmds
-import maya.cmds as cmds
 
 def analyze_and_sort_joints(joints):
     """
@@ -54,6 +50,138 @@ def analyze_and_sort_joints(joints):
         axis_direction = '-y'  # always highest to lowest for Y axis
 
     return sorted_joints, primary_axis, axis_direction
+
+def sort_limbs(joints):
+    """
+    Splits joints representing arms and legs into sorted lists for left and right arms and legs.
+    
+    Args:
+        joints (list): List of joint names.
+        
+    Returns:
+        tuple: (left_arm, right_arm, left_leg, right_leg), where each is a list of joints ordered from 
+               root to end (e.g., shoulder to hand for arms, hip to foot for legs).
+    """
+    if not joints:
+        return [], [], [], []
+    
+    # Separate joints into left and right based on X position, reversing logic
+    left_joints = []
+    right_joints = []
+    
+    for joint in joints:
+        x_pos = cmds.xform(joint, q=True, ws=True, t=True)[0]
+        # Positive X goes to right, negative X to left
+        if x_pos < 0:
+            right_joints.append(joint)
+        else:
+            left_joints.append(joint)
+    
+    # Calculate the median Y position to distinguish between arms and legs
+    y_positions = [cmds.xform(joint, q=True, ws=True, t=True)[1] for joint in joints]
+    median_y = sorted(y_positions)[len(y_positions) // 2]
+    
+    # Function to categorize and sort
+    def categorize_and_sort(joint_list, is_arm):
+        if is_arm:
+            # Sort arms from highest to lowest Y
+            return sorted(joint_list, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[1], reverse=True)
+        else:
+            # Sort legs from highest to lowest Y
+            return sorted(joint_list, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[1], reverse=True)
+    
+    # Separate into arms and legs based on Y position
+    left_arm = categorize_and_sort([j for j in left_joints if cmds.xform(j, q=True, ws=True, t=True)[1] >= median_y], is_arm=True)
+    left_leg = categorize_and_sort([j for j in left_joints if cmds.xform(j, q=True, ws=True, t=True)[1] < median_y], is_arm=False)
+    right_arm = categorize_and_sort([j for j in right_joints if cmds.xform(j, q=True, ws=True, t=True)[1] >= median_y], is_arm=True)
+    right_leg = categorize_and_sort([j for j in right_joints if cmds.xform(j, q=True, ws=True, t=True)[1] < median_y], is_arm=False)
+    
+
+    
+    limb_dict = {'left_arm':left_arm,
+                 'right_arm':right_arm,
+                 'left_leg':left_leg,
+                 'right_leg':right_leg,
+                }
+    for limb in limb_dict:
+        limb_dict[limb] = analyze_and_sort_joints(limb_dict[limb])[0]
+
+    print(json.dumps(limb_dict, indent=4))
+    return limb_dict
+
+
+def categorize_joints(joints):
+    """
+    Categorizes joints into center and limb joints, then further categorizes center joints into torso, neck, and head.
+    
+    Args:
+        joints (list): List of joint names.
+        
+    Returns:
+        dict: Dictionary containing lists of joints categorized as arms, legs, torso, neck, and head.
+    """
+    if not joints:
+        return {
+            'left_arm': [], 'right_arm': [], 
+            'left_leg': [], 'right_leg': [], 
+            'torso': [], 'neck': [], 'head': []
+        }
+    
+    # Separate joints into center and limb joints based on X position proximity to center
+    center_joints = []
+    limb_joints = []
+    
+    for joint in joints:
+        x_pos = cmds.xform(joint, q=True, ws=True, t=True)[0]
+        if abs(x_pos) < 0.01:  # Threshold for "center"
+            center_joints.append(joint)
+        else:
+            limb_joints.append(joint)
+    
+    # Step 1: Separate limbs into left and right arms and legs
+    limb_dict = sort_limbs(limb_joints)
+    
+    # Step 2: Sort center joints by Y position (height) to determine torso, neck, and head
+    center_joints_sorted = sorted(center_joints, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[1], reverse=True)
+    
+    torso = []
+    neck = None
+    head = None
+    
+    # Categorize center joints into torso, neck, and head
+    for joint in center_joints_sorted:
+        y_pos = cmds.xform(joint, q=True, ws=True, t=True)[1]
+        
+        if not neck and limb_dict['left_arm'] and limb_dict['right_arm']:
+            # Check if this joint is the neck (first joint above the arms)
+            arm_y_position = cmds.xform(limb_dict['left_arm'][0], q=True, ws=True, t=True)[1]
+            if y_pos > arm_y_position:
+                neck = joint
+                continue
+        
+        if neck and not head:
+            # If neck is defined, the next highest joint is the head
+            head = joint
+            continue
+        
+        # All other center joints are part of the torso
+        torso.append(joint)
+    
+    # Compile and return the categorized dictionary
+    categorized_joints = {
+        'left_arm': limb_dict['left_arm'],
+        'right_arm': limb_dict['right_arm'],
+        'left_leg': limb_dict['left_leg'],
+        'right_leg': limb_dict['right_leg'],
+        'torso': torso,
+        'neck': [neck] if neck else [],
+        'head': [head] if head else []
+    }
+    
+    # Output result in JSON format for clarity
+    print(json.dumps(categorized_joints, indent=4))
+    return categorized_joints
+
 
 def create_crv_any(self, points, degree=3):
     num_cvs = len(points)

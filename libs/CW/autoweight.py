@@ -2,7 +2,7 @@ import json
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
 
-
+# TODO some of this code should be made more agnostic and moved to a new module called analyze shape
 def analyze_and_sort_joints(joints):
     """
     Analyze a cloud of joints to determine if it is longer along the X or Y axis.
@@ -15,7 +15,8 @@ def analyze_and_sort_joints(joints):
         tuple: (sorted_joints, primary_axis, axis_direction), where:
             - sorted_joints (list): List of joints ordered by position along the primary axis.
             - primary_axis (str): The primary axis ('x' or 'y') based on the longest dimension.
-            - axis_direction (str): Direction ('+' or '-') based on the orientation of the sorted joints.
+            - axis_direction (str): Direction ('+' or '-')
+              based on the orientation of the sorted joints.
     """
     if not joints:
         return [], None, None
@@ -39,14 +40,19 @@ def analyze_and_sort_joints(joints):
         
         # Set sort order based on side
         if side == 'left':
-            sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[axis_index], reverse=True)
+            sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, 
+                                                                    ws=True, t=True)[axis_index],
+                                                                    reverse=True)
             axis_direction = '-x'  # highest to lowest for left side
         else:
-            sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[axis_index])
+            sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, 
+                                                                    ws=True, t=True)[axis_index])
             axis_direction = '+x'  # lowest to highest for right side
     
     else:  # primary_axis == 'y'
-        sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[axis_index], reverse=True)
+        sorted_joints = sorted(joints, key=lambda j: cmds.xform(j, q=True,
+                                                                ws=True, t=True)[axis_index],
+                                                                reverse=True)
         axis_direction = '-y'  # always highest to lowest for Y axis
 
     return sorted_joints, primary_axis, axis_direction
@@ -59,8 +65,8 @@ def sort_limbs(joints):
         joints (list): List of joint names.
         
     Returns:
-        tuple: (left_arm, right_arm, left_leg, right_leg), where each is a list of joints ordered from 
-               root to end (e.g., shoulder to hand for arms, hip to foot for legs).
+        tuple: (left_arm, right_arm, left_leg, right_leg), where each is a list of joints ordered 
+               from root to end (e.g., shoulder to hand for arms, hip to foot for legs).
     """
     if not joints:
         return [], [], [], []
@@ -82,26 +88,30 @@ def sort_limbs(joints):
     median_y = sorted(y_positions)[len(y_positions) // 2]
     
     # Function to categorize and sort
-    def categorize_and_sort(joint_list, is_arm):
+    def sort(joint_list, is_arm):
         if is_arm:
             # Sort arms from highest to lowest Y
-            return sorted(joint_list, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[1], reverse=True)
+            return sorted(joint_list, key=lambda j: cmds.xform(j, q=True, ws=True,
+                                                               t=True)[1], reverse=True)
         else:
             # Sort legs from highest to lowest Y
-            return sorted(joint_list, key=lambda j: cmds.xform(j, q=True, ws=True, t=True)[1], reverse=True)
+            return sorted(joint_list, key=lambda j: cmds.xform(j, q=True, ws=True,
+                                                               t=True)[1], reverse=True)
     
     # Separate into arms and legs based on Y position
-    left_arm = categorize_and_sort([j for j in left_joints if cmds.xform(j, q=True, ws=True, t=True)[1] >= median_y], is_arm=True)
-    left_leg = categorize_and_sort([j for j in left_joints if cmds.xform(j, q=True, ws=True, t=True)[1] < median_y], is_arm=False)
-    right_arm = categorize_and_sort([j for j in right_joints if cmds.xform(j, q=True, ws=True, t=True)[1] >= median_y], is_arm=True)
-    right_leg = categorize_and_sort([j for j in right_joints if cmds.xform(j, q=True, ws=True, t=True)[1] < median_y], is_arm=False)
+    l_arm = sort([j for j in left_joints if cmds.xform(j, q=True,ws=True,
+                                                       t=True)[1] >= median_y], is_arm=True)
+    l_leg = sort([j for j in left_joints if cmds.xform(j, q=True, ws=True,
+                                                       t=True)[1] < median_y], is_arm=False)
+    r_arm = sort([j for j in right_joints if cmds.xform(j, q=True, ws=True,
+                                                        t=True)[1] >= median_y], is_arm=True)
+    r_leg = sort([j for j in right_joints if cmds.xform(j, q=True, ws=True,
+                                                        t=True)[1] < median_y], is_arm=False)
     
-
-    
-    limb_dict = {'left_arm':left_arm,
-                 'right_arm':right_arm,
-                 'left_leg':left_leg,
-                 'right_leg':right_leg,
+    limb_dict = {'left_arm':l_arm,
+                 'right_arm':r_arm,
+                 'left_leg':l_leg,
+                 'right_leg':r_leg,
                 }
     for limb in limb_dict:
         limb_dict[limb] = analyze_and_sort_joints(limb_dict[limb])[0]

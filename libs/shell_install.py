@@ -1,4 +1,4 @@
-import os, sys, platform
+import os, sys, platform, shutil
 
 from rpdecorator import asciiart
 
@@ -83,6 +83,8 @@ def update_python_path(maya_year):
         print(f'updating the maya.env at : {home_dir}/maya/{maya_year}')
         if platform_info == 'Linux':
             update_maya_env(f'{home_dir}/maya/{maya_year}', debug=False)
+            shutil.copy('/show/BDPUser/rig/rigbdp/libs/userSetup.py', f'{home_dir}/maya/{maya_year}/scripts/')
+
         elif platform_info == 'Darwin':
             update_maya_env(f'{home_dir}/Library/Preferences/Autodesk/maya/{maya_year}')
         elif platform_info == 'Windows':
@@ -93,6 +95,8 @@ def update_python_path(maya_year):
         return True
     except:
         return False
+    
+# 'cp /home/megatron/maya/2024/scripts/userSetup.py home/megatron/maya/2024/scripts/'
 
 
 MAYA_YEAR = [2020, 2021, 2022, 2023, 2024, 2025]

@@ -3,12 +3,14 @@ import importlib
 from maya import cmds, mel
 
 from rigbdp.import_export import sdk_utils, corrective
-from rigbdp.build import post_scripts
+from rigbdp.build import post_scripts, vis_rig
 from rigbdp import utils as rig_utils
 
 importlib.reload(sdk_utils)
 importlib.reload(corrective)
 importlib.reload(post_scripts)
+importlib.reload(vis_rig)
+importlib.reload(rig_utils)
 
 r'''
 In order to get a successful rig build there are a few prerequisites
@@ -60,6 +62,10 @@ class RigMerge:
         # If build output path given, save file
         cmds.file(rename=self.build_output_path)
         cmds.file(save=True, type='mayaAscii')
+        vis_rig.setup_rig_vis(channel_box = True,
+                              hidden_in_outliner=False,
+                              skin_jnt_vis=False, sculpt_jnt_vis=False)
+        self.__wrap_eyebrows()
 
 
     def import_correctives(self):
@@ -105,6 +111,12 @@ class RigMerge:
                 cmds.namespace(force=True, moveNamespace=(ns, ':'))
                 cmds.namespace(removeNamespace=ns)
 
+    def __wrap_eyebrows(self):
+        self.eyebrows_mesh = f'{self.char_name}_base_fur_C_eyebrows_mesh'
+        for skin_cluster in cmds.ls(type='skinCluster'):
+            if self.eyebrows_mesh in cmds.skinCluster(skin_cluster, q=True, geometry=True):
+                print('SKINCLUSTER ', skin_cluster)
+                #cmds.skinCluster(skin_cluster, edit=True, unbind=True)
 
 # #################################### Usage ####################################
 # # Initialize the RigMerger instance with file paths

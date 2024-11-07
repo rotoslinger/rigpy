@@ -1,3 +1,5 @@
 __pycache__
 *.pyc
 *.bak
+libs/cartwheel/maya_arm_rig.py
+libs/cartwheel/maya_leg_rig.py

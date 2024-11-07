@@ -1,0 +1,17 @@
+@REM # cd to C:\Program Files\Autodesk\Maya2024\bin
+@REM # .\mayapy.exe -m pip install C:\Users\harri\Documents\Github\CARTWHEEL\geobasil 
+@REM # .\mayapy.exe -m pip install numpy  
+./mayapy C:\\Users\\harri\\Documents\\Github\\CARTWHEEL\\ModelServing\\inference_post_processor\\maya_scripts\\maya_auto_rig_and_retarget.py
+ --character_name "Axel"
+ --prefix "anim_"
+ --suffix "_v1"
+ --input_bvh "C:\\Users\\harri\\Documents\\cartwheel\\input\\Cartwheel-cartwheel.bvh"
+ --input_dir "C:\\Users\\harri\\Documents\\cartwheel\\input"
+ --output_dir "C:\\Users\\harri\\Documents\\cartwheel\\output"
+ --output_types "fbx,bvh,mb"
+ --character_id "base_rig_001"
+ --scale 1
+ --skeleton_template "hik"
+ --camera_info '{}'
+ --character_name "Axel"
+ --input_fbx "C:\\Users\\harri\\Documents\\cartwheel\\input\\character.fbx"

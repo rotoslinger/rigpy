@@ -1,5 +1,5 @@
 #builtins
-import os, shutil, importlib
+import os, shutil, importlib, platform
 
 #thirdparty
 import maya.cmds as cmds
@@ -22,8 +22,19 @@ import maya.cmds as cmds
 #
 #   Once testing is finished, restart maya, then drag drop to be sure things work.
 # -------------------------------------------------------------------------------
+def linux_install(maya_year=2024):
+    maya_year = str(maya_year)
+    platform_info = platform.system()
+    home_dir = os.path.expanduser("~")
+    try:
+        print(f'updating the maya.env at : {home_dir}/maya/{maya_year}')
+        if platform_info == 'Linux':
+            shutil.copy('/show/BDPUser/rig/rigbdp/libs/userSetup.py', f'{home_dir}/maya/{maya_year}/scripts/')
+    except:
+        return False
 
 def onMayaDroppedPythonFile(debug=False):
+
     # Find the path of the currently running script
     module_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -32,7 +43,7 @@ def onMayaDroppedPythonFile(debug=False):
     maya_version = cmds.about(version=True)
     env_dir = os.path.join(maya_user_dir, maya_version)
     env_file = os.path.join(env_dir, "Maya.env")
-
+    linux_install(maya_year=maya_version)
     # Ensure the file path is properly formatted for the current OS
     env_file = os.path.normpath(env_file)
     module_path = os.path.normpath(module_path)

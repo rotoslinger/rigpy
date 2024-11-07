@@ -23,6 +23,9 @@
 		{
 			"name": "rigpy",
 			"path": ".."
+		},
+		{
+			"path": "../../../../../../Program Files/Autodesk/Maya2024/bin"
 		}
 	],
 	"settings": {

@@ -4,6 +4,43 @@ from functools import wraps
 from maya import cmds
 
 
+def wrap_eyebrows():
+    eyebrows_mesh = f'*_base_fur_C_eyebrows_mesh'
+    eyebrows_mesh = cmds.ls(eyebrows_mesh)
+    if not eyebrows_mesh:return
+    eyebrows_mesh=eyebrows_mesh[0]
+        
+    # cmds.delete(skin_cluster)
+    char_name = eyebrows_mesh.split('_')[0]
+    body_mesh = f'{char_name}_base_body_geo'
+    cmds.delete(eyebrows_mesh, constructionHistory=True)
+    cmds.select(eyebrows_mesh, body_mesh)
+    wrap = cmds.CreateWrap()
+
+def get_skinclusters_on_mesh(mesh):
+    skin_clusters=[]
+
+    for skin_cluster in cmds.ls(type='skinCluster'):
+        geoms = cmds.skinCluster(skin_cluster, q=True, geometry=True)
+        if not geoms: continue
+        '''
+        Finding the skincluster associated with the mesh
+
+        We really only care about things that end in Shape
+
+        Because the skincluster geometry query only returns shape names, we need to check if
+        the geometry in the skincluster ends in Shape. If this is true, any partial naming matches
+        get culled out and you can focus on only meshes.
+        '''
+        # makes sure that string eyebrows_mesh is in the skincluster, and also ends with meshShape 
+        if mesh in geoms[0] and geoms[0].endswith('Shape'):
+            skin_clusters.append(skin_cluster)
+            #cmds.skinCluster(skin_cluster, edit=True, unbind=True)
+        
+    print('GEOMS', mesh)
+    print('SKINCLUSTERS ', skin_clusters)
+
+
 def clean_intermediate_nodes():
     '''
     This will get rid of extraneous intermediate nodes that would cause a SHAPES

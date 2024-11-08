@@ -192,7 +192,6 @@ def categorize_joints(joints):
     print(json.dumps(categorized_joints, indent=4))
     return categorized_joints
 
-
 def create_crv_any(self, points, degree=3):
     num_cvs = len(points)
     required_knots = num_cvs + degree - 1

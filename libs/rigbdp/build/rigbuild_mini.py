@@ -1,4 +1,4 @@
-import importlib
+import os, importlib
 
 from maya import cmds, mel
 
@@ -31,21 +31,28 @@ class RigMerge:
     def __init__(self,
                  char_name,
                  MnM_rig_path,
-                 MnM_rig_path_2022,
-                 corrective_mel_path,
-                 sdk_data_path,
-                 joint_vis_prefs=False,
-                 build_output_path=''):
+                #  MnM_rig_path_2022,
+                 SHAPES_mel_paths,
+                 build_output_path,
+                 sdk_data_path=None,
+                 wrap_eyebrows=True):
         self.char_name = char_name
         self.MnM_rig_path = MnM_rig_path
-        self.MnM_rig_path_2022 = MnM_rig_path_2022
+        # self.MnM_rig_path_2022 = MnM_rig_path_2022
         self.build_output_path = build_output_path
-        self.corrective_mel_path = corrective_mel_path
+        if not type(SHAPES_mel_paths) == list: SHAPES_mel_paths = [SHAPES_mel_paths]
+        self.SHAPES_mel_paths = SHAPES_mel_paths
         self.sdk_data_path = sdk_data_path
+
+        # populate a list called self.corrective_meshes from the self.corrective_mel_paths
+        self.__get_corrective_meshes_from_mel()
+
         
         # these paths have to be maya-ified even if you are on windows
-        self.corrective_mel_path = self.corrective_mel_path.replace('\\', '/' )
+
+        self.SHAPES_mel_paths = [p.replace('\\', '/' ) for p in self.SHAPES_mel_paths]
         self.build_output_path = self.build_output_path.replace('\\', '/' )
+        self.wrap_eyebrows = wrap_eyebrows
 
 
     def init_mnm_rig(self):
@@ -61,19 +68,30 @@ class RigMerge:
 
         # If build output path given, save file
         cmds.file(rename=self.build_output_path)
-        cmds.file(save=True, type='mayaAscii')
         vis_rig.setup_rig_vis(channel_box = True,
                               hidden_in_outliner=False,
                               skin_jnt_vis=False, sculpt_jnt_vis=False)
-        self.__wrap_eyebrows()
+        if self.wrap_eyebrows:
+            rig_utils.wrap_eyebrows()
+
+        # NOTE: placeholder until we figure out what to do with broken ffds
+        self.__deactivate_broken_ffds()
+        cmds.setAttr("preferences.showClothes", 1)
+        rig_utils.clean_intermediate_nodes()
+        cmds.file(save=True, type='mayaAscii')
 
 
     def import_correctives(self):
+        # # 3. Clean up the scene for corrective import
+        # corrective.pre_import_bs_cleanup(char_name=self.char_name)
+        
         # 3. Clean up the scene for corrective import
-        corrective.pre_import_bs_cleanup(char_name=self.char_name)
+        for mesh in self.corrective_meshes:
+            corrective.pre_import_bs_cleanup_NEW(mesh_name=mesh)
 
         # 4. Import correctives
-        mel.eval(f'source "{self.corrective_mel_path}";')
+        for path in self.SHAPES_mel_paths:
+            mel.eval(f'source "{path}";')
 
         # 4a. Turn on all model_fix blendshape targets for every blendShape in the scene
         blendshapes = cmds.ls(type='blendShape')
@@ -82,24 +100,22 @@ class RigMerge:
             if cmds.objExists(mod_fix_tgt):
                 cmds.setAttr(mod_fix_tgt, 1)
                 cmds.setAttr(mod_fix_tgt, edit=True, lock=True)
+        cmds.file(save=True, type='mayaAscii')
 
 
     def import_sdk_data(self):
         # 5. Import and rebuild set driven key data
         sdk_utils.import_sdks(self.sdk_data_path)
-
-        rig_utils.clean_intermediate_nodes()
-        cmds.setAttr("preferences.showClothes",1)
-
+        cmds.file(save=True, type='mayaAscii')
 
 
     def __import_rig_clean(self):
-        maya_version_year = cmds.about(version=True)
+        # maya_version_year = cmds.about(version=True)
 
-        if '2022' in str(maya_version_year):
-            self.build_output_path = f'{self.build_output_path}_maya2022'
-            print('THE YEAR IS 2022')
-            self.MnM_rig_path = self.MnM_rig_path_2022
+        # if '2022' in str(maya_version_year):
+        #     self.build_output_path = f'{self.build_output_path}_maya2022'
+        #     print('THE YEAR IS 2022')
+        #     self.MnM_rig_path = self.MnM_rig_path_2022
 
         cmds.file(self.MnM_rig_path, i=True, namespace=":", preserveReferences=True)
 
@@ -111,12 +127,25 @@ class RigMerge:
                 cmds.namespace(force=True, moveNamespace=(ns, ':'))
                 cmds.namespace(removeNamespace=ns)
 
-    def __wrap_eyebrows(self):
-        self.eyebrows_mesh = f'{self.char_name}_base_fur_C_eyebrows_mesh'
-        for skin_cluster in cmds.ls(type='skinCluster'):
-            if self.eyebrows_mesh in cmds.skinCluster(skin_cluster, q=True, geometry=True):
-                print('SKINCLUSTER ', skin_cluster)
-                #cmds.skinCluster(skin_cluster, edit=True, unbind=True)
+    def __deactivate_broken_ffds(self):
+        cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretch_ffd.envelope', 0)
+        cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretchGlobal_ffd.envelope', 0)
+        
+    def __get_corrective_meshes_from_mel(self):
+        self.corrective_meshes=[]
+        for name in self.SHAPES_mel_paths:
+            _,tail = os.path.split(name)
+            name, _ = os.path.splitext(tail)
+
+            prefix = 'M_'
+            suffix = 'Shapes_blendShape'
+            # Check if the blendshape name contains the expected prefix and suffix
+            if name.startswith(prefix) and name.endswith(suffix):
+                # Strip the prefix and suffix to extract the mesh name
+                mesh_name = name[len(prefix):-len(suffix)]
+                self.corrective_meshes.append(mesh_name)
+            else:
+                continue
 
 # #################################### Usage ####################################
 # # Initialize the RigMerger instance with file paths

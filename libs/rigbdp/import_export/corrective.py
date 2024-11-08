@@ -87,6 +87,43 @@ def pre_import_bs_cleanup(char_name):
         cmds.disconnectAttr(connections[idx], f'{node}.{name}')
     cmds.delete(f"M_{char_name}_base_body_geoShapes_blendShape")
 
+
+def pre_import_bs_cleanup_NEW(side=None, mesh_name='jsh_base_cloth_top_fabric_mesh'):
+    # cleanly delete the old blendshape without deleting any Minimo nodes.
+    '''
+    ---background
+    Maya automatically does garbage collection.
+
+    When the blendshape is deleted using the ui the Minimo nodes for driving
+    the blendshape weights are also deleted.
+
+    This script will first delete connections, then delete the blendshape,
+    then SHAPES can properly rebuild all of the connections
+    
+    '''
+
+    suffix = mesh_name.split('_')[-1]
+    mesh_name = mesh_name.replace(suffix,'')
+    if not side:side='M'
+    blendshape = f"{side}_{mesh_name}geoShapes_blendShape"
+    if not cmds.objExists(blendshape):return
+    print('BLENDSHAPE NAME : ', blendshape)
+    # Get the weight attr
+    full_attr = f'{blendshape}.weight'
+    # Get all indices for the compound array
+    bs_weight_names = cmds.listAttr(full_attr, multi=True)
+    connections = []
+    for name in bs_weight_names:
+        full_attr = f'{blendshape}.{name}'
+        connections.append(cmds.listConnections(full_attr, plugs=True, source=True, destination=False)[0])
+        print(connections)
+    for idx, name in enumerate(bs_weight_names):
+        print(f'{blendshape}.{name}')
+        print(connections[idx])
+        cmds.disconnectAttr(connections[idx], f'{blendshape}.{name}')
+    cmds.delete(blendshape)
+
+
 def post_import(char_name):
     # if a second ShapeOrig was created, delete it, the node network will not be interrupted 
     if cmds.objExists(f"{char_name}_base_body_geoShapeOrig1"):

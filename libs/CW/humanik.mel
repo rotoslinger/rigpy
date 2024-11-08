@@ -1,0 +1,71 @@
+//in this example I am setting Character 2
+
+$gCurrentCharacter = "Character2"; 
+refreshAllCharacterLists();
+
+Once the character is set, we can use it with these commands
+
+Locking the Character definition 
+characterizationLock();
+
+Creating a new Characterization 
+characterizationCreate();
+
+Creating a ControlRig 
+characterizationControlRigCreate();
+
+Deleting a Control Rig 
+characterizationControlRigDelete();
+
+Using the skeleton generator 
+skeletonGeneratorToolNewCharacter;
+
+Setting the source for a HumanIK character
+//to control rig 
+mayaHIKsetRigInput( "Character1" ); updateHIKCharacterToolEnableCheckBox(); 
+
+//to stance pose 
+mayaHIKsetStanceInput( "Character2" ); updateHIKCharacterToolEnableCheckBox(); 
+
+//to set to a character input 
+mayaHIKsetCharacterInput( "Character1","Character2" ); updateHIKCharacterToolEnableCheckBox();
+
+Choosing a keying mode, i.e. full-body, partial, or selection 
+//full body 
+optionVar -intValue keyFullBody 1; setKeyingMode( );
+
+
+// body parts 
+optionVar -intValue keyFullBody 2; setKeyingMode( );
+
+
+//selection 
+optionVar -intValue keyFullBody 3; setKeyingMode( );
+
+Turning on and off pinning for individual effectors
+//Here I am Character1_Ctrl_RightWristEffector as the effector
+
+//unpinned 
+setAttr "Character1_Ctrl_RightWristEffector.pinning" 0; 
+
+//pin Translate 
+setAttr "Character1_Ctrl_RightWristEffector.pinning" 1; 
+
+//pin Rotate 
+setAttr "Character1_Ctrl_RightWristEffector.pinning" 2; 
+
+//pin all 
+setAttr "Character1_Ctrl_RightWristEffector.pinning" 3;
+
+Baking the retarget to the control rig or skeleton 
+//Bake to Skeleton without opening the options 
+hikBakeToSkeleton 0;
+
+//Bake to Skeleton with opening the options 
+hikBakeToSkeleton 1; 
+
+//Bake to Control Rig without opening the options 
+hikBakeToControlRig 0;
+
+//Bake to Skeleton without opening the options 
+hikBakeToControlRig 1;

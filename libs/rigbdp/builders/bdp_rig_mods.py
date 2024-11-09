@@ -3,7 +3,14 @@ import maya.OpenMaya as om
 #import pymel.core as pm
 import math
 
+def create_lips_sculpt_jnts():
+    sides = ['L_','R_']
+    for side in sides:
+        cmds.select(cl=True)
+        cmds.select(side + 'lips_offset')
+        cmds.joint(n=side + 'lips_jntPSD', )
 
+        cmds.parentConstraint(side + 'lips_ctrl', side + 'lips_jntPSD', mo=False)
 
 def connect_common_blendshapes(char_name='jsh'):
     blendShapeWeight_Body = cmds.listAttr(f'M_{char_name}_base_body_geoShapes_blendShape.w', m=True)

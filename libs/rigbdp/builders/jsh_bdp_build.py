@@ -91,3 +91,6 @@ rig_merge.import_sdk_data()
 # example.function()
 
 #--------------------------------------------------------
+
+# Post build save
+cmds.file(save=True, type='mayaAscii')

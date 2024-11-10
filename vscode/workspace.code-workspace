@@ -26,6 +26,12 @@
 		},
 		{
 			"path": "../../../../../../Program Files/Autodesk/Maya2024/bin"
+		},
+		{
+			"path": "../../../maya/2024/scripts"
+		},
+		{
+			"path": "../../../maya/2024/prefs/scriptEditorTemp"
 		}
 	],
 	"settings": {

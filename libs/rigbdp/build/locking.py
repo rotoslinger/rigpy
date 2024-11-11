@@ -312,20 +312,13 @@ def get_compound_attr_connect_map(node, compound_attr):
         # Build the indexed attribute (e.g., skinCluster.matrix[0])
         indexed_attr = f"{full_attr}[{index}]"
         connection = cmds.listConnections(indexed_attr, source=True, destination=False, plugs=True)[0]
-
         mult_matrix_input0 = connection.split(".")[0]
         mult_matrix_input0= f'{mult_matrix_input0}.matrixIn[0]'
+        if not cmds.objExists(mult_matrix_input0): continue
         mult_matrix_input0_connection = cmds.listConnections(mult_matrix_input0, source=True, destination=False, plugs=True)[0]
         mult_matrix_input0_connection = f'{mult_matrix_input0_connection}[0]'
-        if "R_arm05Localized_multMatrix" in connection:
-            #print("joint out attr " + joint_out_attr)
-            print("input0 connection is " + mult_matrix_input0_connection)
-
         if connection:
             # Store connections in the dictionary
-            if "matrix[39]" in indexed_attr:
-                print(f"the dict is : matrix_connections_dict[{connection}] = {indexed_attr}")
-
             matrix_connections_dict[connection] = indexed_attr
             joint_connections_dict[mult_matrix_input0_connection] = indexed_attr
         else:

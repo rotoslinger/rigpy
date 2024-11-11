@@ -1,8 +1,11 @@
 import re
+from importlib import reload
 from functools import wraps
 
 from maya import cmds
 
+from rigbdp.build import locking
+reload(locking)
 
 def wrap_eyebrows():
     eyebrows_mesh = f'*_base_fur_C_eyebrows_mesh'
@@ -36,9 +39,56 @@ def get_skinclusters_on_mesh(mesh):
         if mesh in geoms[0] and geoms[0].endswith('Shape'):
             skin_clusters.append(skin_cluster)
             #cmds.skinCluster(skin_cluster, edit=True, unbind=True)
-        
-    print('GEOMS', mesh)
-    print('SKINCLUSTERS ', skin_clusters)
+    return skin_clusters
+
+def smart_copy_skinweights(source_mesh, target_mesh):
+    skin_clusters = get_skinclusters_on_mesh(source_mesh)
+    # print('GEOMS', source_mesh)
+    # print('SKINCLUSTERS ', skin_clusters)
+    skin_influence_map = {}
+    reconnect_skins = {}
+    for source_skincluster in skin_clusters:
+        # try:
+        map = locking.get_compound_attr_connect_map(node = source_skincluster, compound_attr='matrix')
+        locking.connect_skin_joints(map, source_skincluster)
+        influences = cmds.skinCluster(source_skincluster, query=True, influence=True)
+        skin_influence_map[source_skincluster]=influences
+        reconnect_skins[source_skincluster]=map
+        # except Exception as e:
+        #     print('ERROR : ', e)
+        #     influences = cmds.skinCluster(source_skincluster, query=True, influence=True)
+        #     skin_influence_map[source_skincluster]=influences
+
+    for source_skincluster in skin_influence_map:
+        # print(f'skincluster: {source_skincluster}\ninfluences: {skin_influence_map[source_skincluster]}')
+        skincluster_new_name = source_skincluster.replace(source_mesh, target_mesh)
+        # print('NEW SKIN CLUSTER NAME ', skincluster_new_name)
+        if not cmds.objExists(skincluster_new_name):
+            target_skincluster = cmds.skinCluster(target_mesh,
+                                                  skin_influence_map[source_skincluster],
+                                                  bindMethod=0,
+                                                  toSelectedBones=True,
+                                                  multi=True,
+                                                  name=skincluster_new_name)[0]
+        # print('INFLUENCES ',skin_influence_map[source_skincluster])
+        # print('COPYING FOR ',source_skincluster)
+        cmds.copySkinWeights(sourceSkin=source_skincluster,
+                                destinationSkin=target_skincluster,
+                                noMirror=True,
+                                influenceAssociation=['label', 'name', 'oneToOne'] # "oneToOne" 'label'
+                                )
+    for skin in reconnect_skins:
+        locking.connect_matrix_mults(reconnect_skins[skin], skin)
+
+
+# connections_data = get_compound_attr_connect_map(node='teshi_base_body_geo_bodyMechanics_skinCluster',
+#                                                  compound_attr='matrix')
+# export_to_json(connections_data,
+#                filename_prefix='teshi_base_body_geo_bodyMechanics_skinCluster',
+#                file_path=r'C:\Users\harri\Documents\BDP\cha\teshi',
+#                suffix='MATRIX_CONNECTIONS')
+
+    
 
 
 def clean_intermediate_nodes():

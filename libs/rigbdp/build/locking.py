@@ -148,7 +148,7 @@ def setIsHistoricallyInteresting(value=1):
     Set isHistoricallyInteresting attribute for all nodes in scene.
     The historicallyInteresting attribute is 0 on nodes which are only interesting to programmers.
     1 for the TDs, 2 for the users.
-    :param value        Set ihi to 0: off, 1:on, 2:also on
+    :param value        Set ihi to 0: hide history, 1: show_history, 2: show history++
     setIsHistoricallyInteresting(value=0)  # hide history from channelbox
     setIsHistoricallyInteresting(value=2)  # show history (a bit more than Maya's default)
     '''

@@ -1,5 +1,6 @@
 from functools import wraps
 from maya import cmds
+from rigbdp.build import locking
 
 OTHER = ['M_freeze_env', 'spaces_grp', 'modules_grp', 'rigGeo_ndStep_grp', 'rigGeo_200_grp']
 
@@ -14,8 +15,8 @@ def suppress_warnings(func):
         return result
     return wrapper
 
-@suppress_warnings
-def setup_rig_vis(channel_box = True, hidden_in_outliner=False, skin_jnt_vis=False, sculpt_jnt_vis=True):
+def setup_rig_vis(channel_box = True, hidden_in_outliner=False,
+                  skin_jnt_vis=False, sculpt_jnt_vis=True, is_historically_interesting=True):
     # create divider
     if not cmds.objExists('preferences.__________________'):
         cmds.addAttr('preferences', longName="__________________", attributeType='enum', enumName='_________:')
@@ -58,3 +59,10 @@ def setup_rig_vis(channel_box = True, hidden_in_outliner=False, skin_jnt_vis=Fal
         cmds.setAttr(name, e=True, channelBox=channel_box)
         if index > 0:
             cmds.setAttr(name, arg_attrs[index])
+
+    if is_historically_interesting:
+        # Turn on 
+        locking.setIsHistoricallyInteresting(1)
+    else:
+        # Turn off
+        locking.setIsHistoricallyInteresting(0)

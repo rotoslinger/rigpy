@@ -13,29 +13,29 @@ for mod in MODULES:
     importlib.reload(mod)
 ### DYNAMIC GEN
 
-##################################### Helpful export snippets ######################################
-# # Create character directory structure
-# # --- Character directories to assist in build automation
-# char_dir = r'C:\Users\harri\Documents\BDP\build_demo'
-# char_name = 'jsh'
-# created_dirs = build_pathing.find_files(char_dir, char_name, 11)
-#---------------------------------------------------------------------------------------------------
-# # Set Driven Key Export
-# # --- Export all set driven keys in the scene
-# sdk_data_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\input\sdk_data.json'
-# sdk_utils.export_sdks(filepath=sdk_data_path)
-#---------------------------------------------------------------------------------------------------
-# # SHAPES load mesh error
-# # --- if shapes won't load a mesh, run this
-# rig_utils.clean_intermediate_nodes() # - if shapes complains and won't load a mesh, run this
-#---------------------------------------------------------------------------------------------------
-# # Find build files
-# # --- Automatically find files used in the build
-# char_dir = r'C:\Users\harri\Documents\BDP\build_demo'
-# char_name = 'jsh'
-# created_dirs = build_pathing.find_files(char_dir, char_name, 11)
-# # When the output prints, paste it in BUILDER PATHS section
-####################################################################################################
+#################################### Helpful export snippets ######################################
+# Create character directory structure
+# --- Character directories to assist in build automation
+char_dir = r'C:\Users\harri\Documents\BDP\build_demo'
+char_name = 'jsh'
+created_dirs = build_pathing.find_files(char_dir, char_name, 11)   # char_name, dir_to_char, new_version, MnM_extension='.ma',
+# ---------------------------------------------------------------------------------------------------
+# Set Driven Key Export
+# --- Export all set driven keys in the scene
+sdk_data_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\input\sdk_data.json'
+sdk_utils.export_sdks(filepath=sdk_data_path)
+# ---------------------------------------------------------------------------------------------------
+# SHAPES load mesh error
+# --- if shapes won't load a mesh, run this
+rig_utils.clean_intermediate_nodes() # - if shapes complains and won't load a mesh, run this
+# ---------------------------------------------------------------------------------------------------
+# Find build files
+# --- Automatically find files used in the build
+char_dir = r'C:\Users\harri\Documents\BDP\build_demo'
+char_name = 'jsh'
+created_dirs = build_pathing.find_files(char_dir, char_name, 11)
+# When the output prints, paste it in BUILDER PATHS section
+###################################################################################################
 
 ########################################### BUILDER PATHS ##########################################
 # Copy these paths to your builder

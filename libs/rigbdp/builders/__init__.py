@@ -2,22 +2,18 @@
 import importlib
 from maya import cmds, mel
 
-# Import modules and create aliases if necessary
 from rigbdp import utils as rig_utils
-from rigbdp.import_export import sdk_utils
-from rigbdp.import_export import corrective
-from rigbdp.build import post_scripts
-from rigbdp.build import rigbuild_mini
-from rigbdp.builders import bdp_rigMods as rig_mods
-# Step 1: Create a list of modules for easy reloading
-MODULES = [
-    rig_utils,
-    sdk_utils,
-    corrective,
-    post_scripts,
-    rigbuild_mini,
-    rig_mods,
-]
+from rigbdp.import_export import sdk_utils, corrective
+from rigbdp.build import post_scripts, rigbuild_mini, build_pathing
+from rigbdp.builders import bdp_rig_mods
+
+MODULES = [rig_utils, sdk_utils, corrective, post_scripts,
+           rigbuild_mini, build_pathing, bdp_rig_mods]
+for mod in MODULES:
+    importlib.reload(mod)
+
+
+
 
 # Step 2: Update globals to include the modules
 globals().update({module.__name__: module for module in MODULES})

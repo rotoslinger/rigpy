@@ -143,7 +143,7 @@ def hidden_in_outliner_off():
 
 
 
-def setIsHistoricallyInteresting(value=1):
+def set_history_visibility(value=1):
     '''
     Set isHistoricallyInteresting attribute for all nodes in scene.
     The historicallyInteresting attribute is 0 on nodes which are only interesting to programmers.
@@ -155,7 +155,7 @@ def setIsHistoricallyInteresting(value=1):
     allNodes = cmds.ls()
     failed = []
     for node in allNodes:
-        plug = '{}.ihi'.format(node)
+        plug = '{}.isHistoricallyInteresting'.format(node)
         if cmds.objExists(plug):
             try:
                 cmds.setAttr(plug, value)
@@ -260,7 +260,7 @@ def lock_unselectable():
 def unlock_all(ihi_level=1, skin=True, walkout=True):
     unlock_unselectable()
     unlock_unhide_grps()
-    setIsHistoricallyInteresting(value=ihi_level)
+    set_history_visibility(value=ihi_level)
 
 
 ############################################################################################################################################################

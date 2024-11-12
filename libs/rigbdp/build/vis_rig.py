@@ -62,7 +62,7 @@ def setup_rig_vis(channel_box = True, hidden_in_outliner=False,
 
     if is_historically_interesting:
         # Turn on 
-        locking.setIsHistoricallyInteresting(1)
+        locking.set_history_visibility(1)
     else:
         # Turn off
-        locking.setIsHistoricallyInteresting(0)
+        locking.set_history_visibility(0)

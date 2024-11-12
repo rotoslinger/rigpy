@@ -1,10 +1,35 @@
-import json
+import json, statistics
+
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
 
 
 
+def create_bounding_box_cube(bounding_box, name='bounds_cube', parent=None):
+    '''
+    Args:
+        bounding_box (MBoundingBox): An maya.api.OpenMaya 2 MBoundingBox. Library is important,
+                                     you will error out if an maya.OpenMaya MBoundingBox
+        name (str): Name to give the new polyCube.
+        parent (None/str): The MFnMesh object representing the mesh to test against.
+    Return:
 
+    '''
+    width = bounding_box.width
+    height = bounding_box.height
+    depth = bounding_box.depth
+
+    # Create the poly cube with the correct dimensions
+    cube_name = cmds.polyCube(w=width, h=height, d=depth,
+                              name=name, parent=parent,
+                              constructionHistory=False)[0]
+
+    # Get the center of the bounding box
+    bbox_center = bounding_box.center
+
+    # Move the cube to the center of the bounding box
+    cmds.xform(cube_name, translation=(bbox_center.x, bbox_center.y, bbox_center.z))
+    return cube_name
 
 
 def curve_unnormalized(pts, name='linearCurve', parent=None):
@@ -426,6 +451,25 @@ def select_limbs_from_points(points, mesh, limb_type='legs', debug=True):
 # # Example usage:
 # # Define points (e.g., a list of vertex positions from a mesh in world space)
 # select_limbs_from_points(points, limb_type="legs")  # Select leg vertices
+def closest_points_on_curve(curve, points):
+    # Get the MObject for the curve
+    curve_dag_path = get_dag_path(curve)
+    curve_fn = om.MFnNurbsCurve(curve_dag_path)
+    closest_points = []
+    for point in points:
+        # Find the closest point on the curve to this vertex position
+        closest_points.append(curve_fn.closestPoint(point, space=om.MSpace.kWorld))
+    return closest_points
+
+def get_pnt_lists_vector_lengths(from_pts, to_pts):
+    lengths = []
+    for from_point, to_point in enumerate(from_pts, to_pts):
+        print('FROM POINT',from_point)
+        vector_from = om.MVector(from_point[0].x, from_point[0].y, from_point[0].z)
+        vector_to = om.MVector(to_point[0], to_point[1], to_point[2])
+        length_vector = vector_from-vector_to
+        lengths.append(length_vector.length())
+    return lengths
 
 def sort_points_by_jnt_crv(joints, mesh,  curve):
     joint_data = sort_jnts_in_xy(joints)
@@ -466,7 +510,15 @@ def sort_points_by_jnt_crv(joints, mesh,  curve):
         # Convert the MPoint to a tuple of (x, y, z)
         point_tuple = (round(key.x, 4), round(key.y, 4), round(key.z, 4))
         point_index_dict[point_tuple] = value
-    print(points_dict['points'])
+    # print("POINTS DICT : ",points_dict['points'])
+    # closest_pts = closest_points_on_curve(curve=curve, points=points_dict['points'])
+    # vector_lengths = get_pnt_lists_vector_lengths(from_pts=closest_pts,
+    #                                               to_pts=points_dict['points'])
+    # average_length = statistics.mean(vector_lengths)
+    # # statistics.mean(y_vals)  # = 20.11111111111111
+    # print(f'Average Length : {average_length}')
+
+
 
 
     select_limbs_from_points(point_index_dict, mesh=mesh, limb_type='arms')  # Select leg vertices

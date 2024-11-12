@@ -78,8 +78,11 @@ def replace_keys_and_values_in_nested_dict(dictionary, source_name, target_name)
 
 
 
-def smart_copy_skinweights(source_mesh, target_mesh, filepath=r'C:\Users\harri\Documents\BDP\build_demo\jsh\input'):
-    skin_clusters = get_skinclusters_on_mesh(source_mesh)
+def smart_copy_skinweights(source_mesh, target_mesh,
+                           skin_clusters=[],
+                           filepath=r'C:\Users\harri\Documents\BDP\build_demo\jsh\input'):
+    if not skin_clusters:
+        skin_clusters = get_skinclusters_on_mesh(source_mesh)
     # print('GEOMS', source_mesh)
     # print('SKINCLUSTERS ', skin_clusters)
     src_skin_influences = {}
@@ -134,6 +137,22 @@ def smart_copy_skinweights(source_mesh, target_mesh, filepath=r'C:\Users\harri\D
         # print('Connected new Matrix mults', skincluster_new_name)
 
 
+# from importlib import reload
+# from rigbdp import utils
+# from rigbdp.build import locking
+# reload(utils)
+# reload(locking)
+# locking.set_history_visibility(1)
+
+# export_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh'
+# utils.smart_copy_skinweights(source_mesh='jsh_base_cloth_top_fabric_mesh',
+#                              target_mesh='jsh_base_cloth_top_fabric_low_mesh',
+#                              skin_clusters=['jsh_base_cloth_top_fabric_mesh_bodyMechanics_skinCluster'],
+#                              filepath=export_path)
+# utils.smart_copy_skinweights(source_mesh='jsh_base_cloth_pants_fabric_mesh',
+#                              target_mesh='jsh_base_cloth_pants_fabric_low_mesh',
+#                              skin_clusters=['jsh_base_cloth_pants_fabric_mesh_bodyMechanics_skinCluster'],
+#                              filepath=export_path)
 
 
 

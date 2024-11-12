@@ -64,7 +64,7 @@ dir_to_char = r'C:\Users\harri\Documents\BDP\build_demo'
 create_char_structure(char_name=char_name, dir_to_char=dir_to_char )
 
 @print_bookends
-def find_files(char_name, dir_to_char, new_version,
+def find_files(char_name, dir_to_char, new_version_number,
                MnM_extension='.ma', ):
     """
     Finds specific files based on extensions in a character's directory structure.
@@ -94,7 +94,7 @@ def find_files(char_name, dir_to_char, new_version,
     SHAPES_mel_paths = glob.glob(f'{SHAPES_dir}*{SHAPES_extension}')
     
     # Construct output filename based on character name and version
-    output_filename = f'{char_name}_RIG_200_v{new_version:03}.ma'
+    output_filename = f'{char_name}_RIG_200_v{new_version_number:03}.ma'
     build_output_path = f'{output_dir}{output_filename}'
 
     # Path for sdk data file
@@ -119,43 +119,43 @@ def find_files(char_name, dir_to_char, new_version,
 # file_paths = find_files(char_name=char_name, dir_to_char=dir_to_char, new_version=new_version)
 
 
-def manual_path_building():
-    sep = os.path.sep
-    char_name = 'jsh'
-    new_version = 11
-    char_dir= rf'C:\Users\harri\Documents\BDP\build_demo'
-    SHAPES_dir_name = 'SHAPES'
-    SHAPES_mel_filenames = ['M_jsh_base_body_geoShapes_blendShape.mel',
-                            'M_jsh_base_cloth_top_fabric_geoShapes_blendShape']
-    sdk_filename = 'sdk_data.json'
-    output_dir_name = 'output'
-    MnM_build_file = 'jsh_RIG_200_v008_MnM.ma'
+# def manual_path_building():
+#     sep = os.path.sep
+#     char_name = 'jsh'
+#     new_version = 11
+#     char_dir= rf'C:\Users\harri\Documents\BDP\build_demo'
+#     SHAPES_dir_name = 'SHAPES'
+#     SHAPES_mel_filenames = ['M_jsh_base_body_geoShapes_blendShape.mel',
+#                             'M_jsh_base_cloth_top_fabric_geoShapes_blendShape']
+#     sdk_filename = 'sdk_data.json'
+#     output_dir_name = 'output'
+#     MnM_build_file = 'jsh_RIG_200_v008_MnM.ma'
 
-    ### class args to be dynamically created:
-    # At any point you can hardcode any of these and plug them directly into the class
-    MnM_rig_path=None
-    SHAPES_mel_paths=None
-    build_output_path=None
-    sdk_data_path=None
+#     ### class args to be dynamically created:
+#     # At any point you can hardcode any of these and plug them directly into the class
+#     MnM_rig_path=None
+#     SHAPES_mel_paths=None
+#     build_output_path=None
+#     sdk_data_path=None
 
-    ### Dynamically build paths
-    char_dir = rf'{char_dir}{sep}{char_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\build_demo\}{jsh}{\}
-    output_filename=f'{char_name}_RIG_200_v{new_version:03}.ma' # for example --- {jsh}_RIG_200_v0{11}.ma
-    output_dir = rf'{char_dir}{output_dir_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\cha_input\jsh\}{output}{\}
-    SHAPES_dir = rf'{char_dir}{SHAPES_dir_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\cha_input\jsh\}{SHAPES}{\}
-    SHAPES_mel_paths=[]
-    for mel_file in SHAPES_mel_filenames:
-        SHAPES_mel_paths.append(f'{SHAPES_dir}{mel_file}') 
-    # for example --- ['C:\Users\harri\Documents\BDP\cha_input\jsh\SHAPES\}{M_jsh_base_body_geoShapes_blendShape.mel}',
-    #                  'C:\Users\harri\Documents\BDP\cha_input\jsh\SHAPES\}{M_jsh_base_cloth_top_fabric_geoShapes_blendShape.mel}']
+#     ### Dynamically build paths
+#     char_dir = rf'{char_dir}{sep}{char_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\build_demo\}{jsh}{\}
+#     output_filename=f'{char_name}_RIG_200_v{new_version:03}.ma' # for example --- {jsh}_RIG_200_v0{11}.ma
+#     output_dir = rf'{char_dir}{output_dir_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\cha_input\jsh\}{output}{\}
+#     SHAPES_dir = rf'{char_dir}{SHAPES_dir_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\cha_input\jsh\}{SHAPES}{\}
+#     SHAPES_mel_paths=[]
+#     for mel_file in SHAPES_mel_filenames:
+#         SHAPES_mel_paths.append(f'{SHAPES_dir}{mel_file}') 
+#     # for example --- ['C:\Users\harri\Documents\BDP\cha_input\jsh\SHAPES\}{M_jsh_base_body_geoShapes_blendShape.mel}',
+#     #                  'C:\Users\harri\Documents\BDP\cha_input\jsh\SHAPES\}{M_jsh_base_cloth_top_fabric_geoShapes_blendShape.mel}']
 
-    ### Final filepath args: 
-    MnM_rig_path = rf'{char_dir}{MnM_build_file}'
-    SHAPES_mel_paths = SHAPES_mel_paths
-    build_output_path = f'{output_dir}{output_filename}' # for example --- '{C:\Users\harri\Documents\BDP\cha_input\jsh\output\}{jsh_RIG_200_v011.ma}'
-    sdk_data_path = rf'{char_dir}{sdk_filename}'
+#     ### Final filepath args: 
+#     MnM_rig_path = rf'{char_dir}{MnM_build_file}'
+#     SHAPES_mel_paths = SHAPES_mel_paths
+#     build_output_path = f'{output_dir}{output_filename}' # for example --- '{C:\Users\harri\Documents\BDP\cha_input\jsh\output\}{jsh_RIG_200_v011.ma}'
+#     sdk_data_path = rf'{char_dir}{sdk_filename}'
 
-    print(MnM_rig_path)
-    print(SHAPES_mel_paths)
-    print(build_output_path)
-    print(sdk_data_path)
+#     print(MnM_rig_path)
+#     print(SHAPES_mel_paths)
+#     print(build_output_path)
+#     print(sdk_data_path)

@@ -419,7 +419,7 @@ def import_json_conn_map(file_path=None, filename_prefix='', suffix="CONNECTION_
 #     print(f'{key}:{json_attrs.variables[key]}')
 ######################################################################################
 
-def connect_skins(connection_map, skincluster_name, dict_suffix):
+def connect_skins(connection_map, skincluster_name, dict_suffix, debug=False):
     """
     Needs to save out a connection map to keep track of what all the connections originally were.
     CANNOT lose track of which connection goes to which index, this would permanently break the rig!
@@ -434,6 +434,8 @@ def connect_skins(connection_map, skincluster_name, dict_suffix):
             connection_dict = connection_map[key]
             for key in connection_dict:
                 cmds.connectAttr(key, connection_dict[key], force=True)
+                if debug:
+                    print(f'{key} was connected to {connection_dict[key]}')
                 # DELETE ME # Debugging
                 # if "[39]" in connection_dict[key]:
                 #     print("\n")
@@ -454,8 +456,8 @@ def connect_skin_joints(connection_map, skincluster_name):
 
 
 #Connects the matrix mults to the skin so weights can be painted
-def connect_matrix_mults(connection_map, skincluster_name):
-    connect_skins(connection_map, skincluster_name, dict_suffix="_MATRIX_MULT")
+def connect_matrix_mults(connection_map, skincluster_name, debug=False):
+    connect_skins(connection_map, skincluster_name, dict_suffix="_MATRIX_MULT", debug=debug)
 
 ####################################### connect_matrix_mults Usage ########################################
 # json_data = import_json_conn_map(file_path=r'C:\Users\harri\Documents\BDP\cha\teshi',filename_prefix='teshi_base_body_geo_bodyMechanics_skinCluster',suffix="CONNECTION_MAP")

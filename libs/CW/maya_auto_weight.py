@@ -323,18 +323,12 @@ def create_debug_prim(name, cube_or_sphere=True, position=(0, 0, 0)):
 
     return object
 
-
-
 def get_xform_as_mvector(object_name):
     """
     Retrieve the translation of an object as an MVector.
-    
-    :param str object_name: The name of the object whose translation is to be retrieved.
-    :return: The translation vector of the object.
-    :rtype: om.MVector
+    Not performant, should only be used for debugging
     """
-    translation = cmds.xform(object_name, query=True, translation=True, worldSpace=True)
-    return om.MVector(translation[0], translation[1], translation[2])
+    return om.MVector(cmds.xform(object_name, query=True, translation=True, worldSpace=True))
 
 def create_rotation_from_objects(source_object, target_object):
     """
@@ -371,7 +365,23 @@ def create_rotation_from_objects(source_object, target_object):
 # target_object = 'pCube2'  # Example target object (the one to aim at)
 
 # create_rotation_from_objects(source_object, target_object)
-def vector_to_plane(from_plane, to_plane, point, move_to_plane=True):
+
+
+def create_debug_plane(name, position):
+    # Create the polyplane
+    if not cmds.objExists(name):
+        name = cmds.polyPlane(name=name, width=5, height=5, subdivisionsX=1, subdivisionsY=1, axis=[1,0,0])[0]
+
+        # Move the plane to the source position
+        cmds.xform(name, worldSpace=True, translation=(position))
+
+        # Turn on the normal display for visualizing the face normal
+        cmds.polyOptions(name, displayNormal=True)
+        cmds.select(name)
+        cmds.ToggleFaceNormalDisplay(name)
+
+
+def directional_vector_to_plane(from_plane, to_plane, point, move_to_plane=True):
     """
     Projects a point onto an infinite plane defined by two transforms, from_plane and to_plane.
     
@@ -382,9 +392,9 @@ def vector_to_plane(from_plane, to_plane, point, move_to_plane=True):
     :rtype: om.MVector
     """
     # Get the world-space positions of the from_plane and to_plane
-    point_position = om.MVector(cmds.xform(point, query=True, worldSpace=True, translation=True))
-    from_position = om.MVector(cmds.xform(from_plane, query=True, worldSpace=True, translation=True))
-    to_position = om.MVector(cmds.xform(to_plane, query=True, worldSpace=True, translation=True))
+    point_position = get_xform_as_mvector(point)
+    from_position = get_xform_as_mvector(from_plane)
+    to_position = get_xform_as_mvector(to_plane)
     
     # Calculate the direction from the from_plane to the to_plane
     plane_direction = to_position - from_position
@@ -407,19 +417,39 @@ def vector_to_plane(from_plane, to_plane, point, move_to_plane=True):
     
     return directional_vector
 
+def is_point_between_points(point, from_point, to_point):
+    # Create a vector from and a vector to
+    vector_from = get_xform_as_mvector(to_point) - get_xform_as_mvector(from_point)
+    vector_from.normalize()
+    vector_to = get_xform_as_mvector(from_point) - get_xform_as_mvector(to_point)
+    vector_to.normalize()
 
-def create_debug_plane(name, position):
-    # Create the polyplane
-    if not cmds.objExists(name):
-        name = cmds.polyPlane(name=name, width=5, height=5, subdivisionsX=1, subdivisionsY=1, axis=[1,0,0])[0]
+    # find the directional vector from the point to the from_plane representing an infinite plane
 
-        # Move the plane to the source position
-        cmds.xform(name, worldSpace=True, translation=(position))
+    # create a directional vector by projecting to the to_plane
+    projected_point_from = directional_vector_to_plane(from_point, to_point, point, move_to_plane=False)
+    dot_product_from = projected_point_from * vector_from
 
-        # Turn on the normal display for visualizing the face normal
-        cmds.polyOptions(name, displayNormal=True)
-        cmds.select(name)
-        cmds.ToggleFaceNormalDisplay(name)
+    print(f'The projected dot product of {point} from_plane : ', dot_product_from)
+    cmds.select(point)
+
+    # find the directional vector from the point to the to_plane representing an infinite plane
+
+    # create a directional vector by projecting to the from_plane
+    projected_point_to = directional_vector_to_plane(to_point, from_point, point, move_to_plane=False)
+    dot_product_to = projected_point_to * vector_to
+
+    print('The projected dot product of point_01 to_plane : ', dot_product_to)
+    cmds.select(point)
+
+
+    # if the point is between, both of the dot products will either 1.0 or .99999
+    # if either are below 0 they are not between
+    # if they are 0 they are on a plane, technically not between, but we will treat them as such
+    if dot_product_from >= 0 and dot_product_to >= 0:
+        print( f'{point} is between')
+    else:
+        print( f'{point} is not between')
 
 def debug_find_points_between():
 
@@ -429,7 +459,8 @@ def debug_find_points_between():
     
     create_debug_plane(from_plane, position=(0, 0, 0))
     create_debug_plane(to_plane, position=(10, 0, 0))
-    # Rotate the plane to point towards the target
+    
+    # Rotate the plane to point towards the target (Only used to visually debug)
     create_rotation_from_objects(source_object=from_plane, target_object=to_plane)
     create_rotation_from_objects(source_object=to_plane, target_object=from_plane)
 
@@ -439,35 +470,12 @@ def debug_find_points_between():
     # Create pCube1 and pCube2 objects if they don't already exist, and position them
     # from_point = create_debug_prim("from_point", position=(0, 0, 0))
     # to_point = create_debug_prim("to_point", position=(10, 0, 0))
-    point_01 = create_debug_prim("point_01", cube_or_sphere=False, position=(5, 2, 0))  # Example, can be replaced by pSphere creation
+    point = create_debug_prim("point_01", cube_or_sphere=False, position=(5, 2, 0))  # Example, can be replaced by pSphere creation
     point_02 = create_debug_prim("point_02", cube_or_sphere=False, position=(15, 0, 0))
 
 
-    is_point_between(from_plane, to_plane, point_01)
+    is_point_between_points(point, from_plane, to_plane)
 
-def is_point_between(from_plane, to_plane, point_01):
-    vector_from = get_xform_as_mvector(to_plane) - get_xform_as_mvector(from_plane)
-    vector_from.normalize()
-
-    projected_point_from = vector_to_plane(from_plane, to_plane, point_01, move_to_plane=False)
-    dot_product_from = projected_point_from * vector_from
-
-    print('The projected dot product of point_01 from_plane : ', dot_product_from)
-    cmds.select(point_01)
-
-    vector_to = get_xform_as_mvector(from_plane) - get_xform_as_mvector(to_plane)
-    vector_to.normalize()
-
-    projected_point_to = vector_to_plane(to_plane, from_plane, point_01, move_to_plane=False)
-    dot_product_to = projected_point_to * vector_to
-
-    print('The projected dot product of point_01 to_plane : ', dot_product_to)
-    cmds.select(point_01)
-
-    if dot_product_from > 0 and dot_product_to > 0:
-        print( f'{point_01} is between')
-    else:
-        print( f'{point_01} is not between')
 
 
 

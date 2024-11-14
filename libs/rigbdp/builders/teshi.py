@@ -1,7 +1,7 @@
 #######################################
 # DYNAMIC GEN
 import importlib
-from maya import cmds, mel
+#from maya import cmds, mel
 
 from rigbdp import utils as rig_utils
 from rigbdp.import_export import sdk_utils, corrective
@@ -15,13 +15,12 @@ for mod in MODULES:
 # END DYNAMIC GEN
 #######################################
 
-
 # #################################### Helpful export snippets ######################################
 # # Create character directory structure
 # # --- Character directories to assist in build automation
-char_name = 'teshi'
-dir_to_char = r'C:\Users\harri\Documents\BDP\build'
-created_dirs = build_pathing.find_files(char_name=char_name, dir_to_char=dir_to_char, new_version_number=13, MnM_extension='.ma')  # char_name, dir_to_char, new_version, MnM_extension='.ma',
+# char_name = 'teshi'
+# dir_to_char = r'C:\Users\harri\Documents\BDP\build'
+# created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)   # char_name, dir_to_char, new_version, MnM_extension='.ma',
 # # ---------------------------------------------------------------------------------------------------
 # # Set Driven Key Export
 # # --- Export all set driven keys in the scene
@@ -34,25 +33,29 @@ created_dirs = build_pathing.find_files(char_name=char_name, dir_to_char=dir_to_
 # # ---------------------------------------------------------------------------------------------------
 # # Find build files
 # # --- Automatically find files used in the build
-# char_dir = r'C:\Users\harri\Documents\BDP\build'
+# dir_to_char = r'C:\Users\harri\Documents\BDP\build'
 # char_name = 'teshi'
-# created_dirs = build_pathing.find_files(char_dir, char_name, 11)
+# created_dirs = build_pathing.find_files(char_name=char_name, dir_to_char=dir_to_char, new_version_number=13, MnM_extension='.ma')  # char_name, dir_to_char, new_version, MnM_extension='.ma',
 # # When the output prints, paste it in BUILDER PATHS section
-# ###################################################################################################
+# # ###################################################################################################
 
 
-# Initialize the RigMerger instance with file paths
-MnM_rig_path_2024 = r'C:\Users\harri\Documents\BDP\cha_input\teshi\teshi_RIG_200_v009_MnM.ma'
-# MnM_rig_path_2022 = r'C:\Users\harri\Documents\BDP\cha_input\teshi\teshi_RIG_200_v009_maya2022_MnM.ma'
+########################################### BUILDER PATHS ##########################################
+# Copy these paths to your builder
+char_name = 'teshi'
+MnM_rig_path = r'C:\Users\harri\Documents\BDP\build\teshi\input\teshi_RIG_200_v011.ma'
+SHAPES_mel_paths = [r'C:\Users\harri\Documents\BDP\build\teshi\SHAPES\M_teshi_base_body_geoShapes_blendShape.mel']
+build_output_path = r'C:\Users\harri\Documents\BDP\build\teshi\output\teshi_RIG_200_v013.ma'
+sdk_data_path = r'C:\Users\harri\Documents\BDP\build\teshi\input\sdk_data.json'
+####################################################################################################
 
 rig_merge = rigbuild_mini.RigMerge(
-    char_name='teshi',
-    MnM_rig_path=MnM_rig_path_2024,
+    char_name=char_name,
+    MnM_rig_path=MnM_rig_path,
     # MnM_rig_path_2022=MnM_rig_path_2022,
-    SHAPES_mel_paths=r'C:\Users\harri\Documents\BDP\cha_input\teshi\SHAPES\M_teshi_base_body_geoShapes_blendShape.mel',
-    build_output_path=r'C:\Users\harri\Documents\BDP\cha_output\teshi\teshi_RIG_200_v012.ma',
-    # sdk_data_path=r'C:\Users\harri\Documents\BDP\cha_input\teshi\sdk_data.json',
-
+    SHAPES_mel_paths=SHAPES_mel_paths,
+    build_output_path=build_output_path,
+    # sdk_data_path=sdk_data_path,
 )
 
 # 1. Create a new scene, Import the MnM rig build

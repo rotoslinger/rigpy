@@ -59,10 +59,10 @@ def create_char_structure(char_name, dir_to_char, ):
 
 
 # # Example usage
-char_name = 'jsh'
-dir_to_char = r'C:\Users\harri\Documents\BDP\build_demo'
-create_char_structure(char_name=char_name, dir_to_char=dir_to_char )
-
+# char_name = 'jsh'
+# dir_to_char = r'C:\Users\harri\Documents\BDP\build_demo'
+# create_char_structure(char_name=char_name, dir_to_char=dir_to_char )
+print('IMPORTING')
 @print_bookends
 def find_files(char_name, dir_to_char, new_version_number,
                MnM_extension='.ma', ):
@@ -88,7 +88,6 @@ def find_files(char_name, dir_to_char, new_version_number,
     SHAPES_dir = rf'{dir_to_char}SHAPES{sep}'
     output_dir = rf'{dir_to_char}output{sep}'
     input_dir = rf'{dir_to_char}input{sep}'
-    
     # Find all files with the specified MnM and SHAPES extensions in their directories
     MnM_rig_path = glob.glob(f'{input_dir}*{MnM_extension}')
     SHAPES_mel_paths = glob.glob(f'{SHAPES_dir}*{SHAPES_extension}')

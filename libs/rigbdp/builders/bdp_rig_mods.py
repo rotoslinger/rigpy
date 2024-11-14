@@ -14,12 +14,12 @@ def create_lips_sculpt_jnts():
 
 def connect_common_blendshapes(char_name='jsh'):
     blendShapeWeight_Body = cmds.listAttr(f'M_{char_name}_base_body_geoShapes_blendShape.w', m=True)
-    blendShapeWeight_clothes = cmds.listAttr(f'M_{char_name}_base_cloth_top_fabric_geoShapes_blendShape.w', m=True)
+    blendShapeWeight_clothes = cmds.listAttr(f'M_{char_name}_base_cloth_top_fabric_low_geoShapes_blendShape.w', m=True)
 
     common_targets = list(set(blendShapeWeight_Body) & set(blendShapeWeight_clothes))
 
     for common_target in common_targets:
-        cmds.connectAttr(f'M_{char_name}_base_body_geoShapes_blendShape.' + common_target, f'M_{char_name}_base_cloth_top_fabric_geoShapes_blendShape.' + common_target)
+        cmds.connectAttr(f'M_{char_name}_base_body_geoShapes_blendShape.' + common_target, f'M_{char_name}_base_cloth_top_fabric_low_geoShapes_blendShape.' + common_target)
 
 def BDP_outSkel_rigMod():
     

@@ -73,11 +73,6 @@ def replace_keys_and_values_in_nested_dict(dictionary, source_name, target_name)
     return new_dict
 
 
-
-
-
-
-
 def smart_copy_skinweights(source_mesh, target_mesh,
                            skin_clusters=[],
                            filepath=r'C:\Users\harri\Documents\BDP\build_demo\jsh\input'):

@@ -1,7 +1,8 @@
-import json, statistics
+import json, statistics, re, math
 
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
+import numpy as np
 
 
 
@@ -151,6 +152,586 @@ def get_dag_path(object_name):
     selection_list.add(object_name)
     dag_path = selection_list.getDagPath(0)
     return dag_path
+
+def get_transform_matrix(transform_name):
+    """
+    Retrieve the transformation matrix of a specified transform node.
+    
+    :param str transform_name: Name of the transform node.
+    :return: Transformation matrix of the transform.
+    :rtype: om.MMatrix
+    """
+    selection_list = om.MSelectionList()
+    selection_list.add(transform_name)
+    transform_obj = selection_list.getDependNode(0)
+    transform_fn = om.MFnTransform(transform_obj)
+    return transform_fn.transformation().asMatrix()
+
+def get_mesh_points(mesh):
+    """
+    Retrieve all vertex points of a mesh in world space.
+    
+    :param str mesh: Name of the mesh node.
+    :return: List of points in world space.
+    :rtype: list[om.MPoint]
+    """
+    print(mesh)
+    mesh_fn = om.MFnMesh(get_dag_path(mesh))
+    return mesh_fn.getPoints(om.MSpace.kWorld)
+
+def create_oriented_bounding_box(mesh, debug=False):
+    """
+    Calculate the oriented bounding box (OBB) for a mesh and optionally visualize it.
+    
+    :param str mesh: Name of the mesh node to calculate the OBB for.
+    :param bool debug: Whether to visualize the OBB with a polycube.
+    :return: Min and max points of the OBB.
+    :rtype: tuple[om.MPoint, om.MPoint]
+    """
+    # Step 1: Get mesh points in world space
+    points = get_mesh_points(mesh)
+    points_array = np.array([[point.x, point.y, point.z] for point in points])
+    
+    # Step 2: Compute the covariance matrix of the points
+    cov_matrix = np.cov(points_array.T)
+
+    # Step 3: Perform Eigen decomposition to get the principal axes
+    eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+    
+    # Step 4: Get the min and max bounds along each principal axis
+    min_point = om.MPoint(min(points_array[:, 0]), min(points_array[:, 1]), min(points_array[:, 2]))
+    max_point = om.MPoint(max(points_array[:, 0]), max(points_array[:, 1]), max(points_array[:, 2]))
+
+    # Step 5: Visualize with a debug cube (if debug is True)
+    if debug:
+        create_debug_cube(min_point, max_point, eigenvectors)
+
+    return min_point, max_point
+
+def create_debug_cube(min_point, max_point, eigenvectors):
+    """
+    Create a polycube to visualize the oriented bounding box (OBB) with rotation.
+    
+    :param om.MPoint min_point: Minimum point of the OBB.
+    :param om.MPoint max_point: Maximum point of the OBB.
+    :param numpy.ndarray eigenvectors: Principal axes (rotation) of the OBB.
+    """
+    # Step 1: Calculate the width, height, and depth of the bounding box
+    width = max_point.x - min_point.x
+    height = max_point.y - min_point.y
+    depth = max_point.z - min_point.z
+    
+    # Step 2: Create the polycube with the calculated dimensions
+    debug_cube = cmds.polyCube(w=width, h=height, d=depth)[0]
+    
+    # Step 3: Position the cube at the center of the bounding box
+    center = [(min_point.x + max_point.x) * 0.5, 
+              (min_point.y + max_point.y) * 0.5, 
+              (min_point.z + max_point.z) * 0.5]
+    cmds.move(center[0], center[1], center[2], debug_cube)
+    
+    # Step 4: Apply rotation to align with the principal axes of the mesh
+    # Convert eigenvectors to Euler angles
+    rotation_matrix = np.array(eigenvectors)
+    euler_rotation = om.MEulerRotation(*rotation_matrix[0])  # Use the first eigenvector for rotation
+    
+    # Convert Euler rotation from radians to degrees for Maya
+    euler_rotation_degrees = om.MEulerRotation(
+        np.degrees(euler_rotation.x),
+        np.degrees(euler_rotation.y),
+        np.degrees(euler_rotation.z)
+    )
+
+    # Apply the rotation using cmds.xform
+    cmds.xform(debug_cube, rotation=(euler_rotation_degrees.x, euler_rotation_degrees.y, euler_rotation_degrees.z))
+
+
+def get_xform_as_mvector(obj):
+    """
+    Retrieve the translation of an object as an MVector.
+    
+    :param str obj: The name of the object to query.
+    :return: The translation of the object as an MVector.
+    :rtype: om.MVector
+    """
+    # Get translation in world space using cmds.xform
+    translation = cmds.xform(obj, q=True, ws=True, t=True)
+    
+    # Convert the translation to an MVector
+    return om.MVector(translation[0], translation[1], translation[2])
+
+def find_points_between(from_point, to_point, point_list):
+    """
+    Find and select all points that lie between two transforms.
+    
+    :param str from_point: The 'from' transform's name.
+    :param str to_point: The 'to' transform's name.
+    :param list[str] point_list: List of point names (or objects) to check.
+    :return: List of points that lie between the two transforms.
+    :rtype: list[str]
+    """
+    # Get the translation vectors for the from_point and to_point
+    from_vector = get_xform_as_mvector(to_point)-get_xform_as_mvector(from_point)
+    to_vector = get_xform_as_mvector(from_point)-get_xform_as_mvector(to_point)
+    from_vector.normalize()
+    to_vector.normalize()
+
+    # List to hold the points that are between
+    points_between = []
+
+    # Iterate through the points and check if they lie between the two transforms
+    for point in point_list:
+        point_vector = get_xform_as_mvector(point)
+        
+        # Calculate direction from from_point to this point
+        from_vector_to_point = point_vector - from_vector
+        from_vector_to_point.normalize()
+
+        to_vector_to_point = point_vector - to_vector
+        to_vector_to_point.normalize()
+
+        # Dot product test: Check if the point lies between the two direction vectors
+        if (from_vector * from_vector_to_point) >= 0:
+        # if (from_vector * from_vector_to_point) >= 0 and (to_vector * from_vector_to_point) >= 0:
+            points_between.append(point)
+
+    # Select the points that are found between the transforms
+    cmds.select(points_between)
+    return points_between
+
+def create_debug_prim(name, cube_or_sphere=True, position=(0, 0, 0)):
+    """
+    Creates a cube if it does not already exist in the scene, and names it based on the argument.
+    
+    :param str name: The name of the cube to create.
+    :param tuple position: The position to place the cube at (default: (0, 0, 0)).
+    :return: The name of the created or existing cube.
+    :rtype: str
+    """
+    # Check if the cube with the given name already exists
+    if not cmds.objExists(name):
+        object=''
+        # Create the cube and position it
+        if cube_or_sphere:
+            object = cmds.polyCube(name=name)[0]
+        else:
+            object = cmds.polySphere(name=name)[0]
+        cmds.xform(object, translation=position)
+    else:
+        # If it already exists, return the existing cube
+        object = name
+
+    return object
+
+
+
+def get_xform_as_mvector(object_name):
+    """
+    Retrieve the translation of an object as an MVector.
+    
+    :param str object_name: The name of the object whose translation is to be retrieved.
+    :return: The translation vector of the object.
+    :rtype: om.MVector
+    """
+    translation = cmds.xform(object_name, query=True, translation=True, worldSpace=True)
+    return om.MVector(translation[0], translation[1], translation[2])
+
+def create_rotation_from_objects(source_object, target_object):
+    """
+    Calculates and applies the rotation to the source object to aim at the target object.
+    
+    :param str source_object: The object that will be rotated.
+    :param str target_object: The object that the source object will aim at.
+    """
+    # Get the positions of the source and target objects
+    source_position = get_xform_as_mvector(source_object)
+    target_position = get_xform_as_mvector(target_object)
+    
+    # Calculate the direction vector from the source to the target
+    direction_vector = target_position - source_position
+    
+    # Normalize the direction vector
+    direction_vector.normalize()
+    
+    # Assume the source vector should point along the positive X axis
+    source_vector = om.MVector(1, 0, 0)
+    
+    # Rotate the source vector to the target vector using MVector.rotateTo
+    quaternion = source_vector.rotateTo(direction_vector)
+    
+    # Convert the quaternion to Euler rotation
+    euler_rotation = quaternion.asEulerRotation()
+    
+    # Apply the Euler rotation to the source object using xform
+    cmds.xform(source_object,rotation=(math.degrees(euler_rotation[0]),
+                                        math.degrees(euler_rotation[1]),
+                                        math.degrees(euler_rotation[2])), worldSpace=True)
+# Example usage:
+# source_object = 'pCube1'  # Example source object (the one to be rotated)
+# target_object = 'pCube2'  # Example target object (the one to aim at)
+
+# create_rotation_from_objects(source_object, target_object)
+def vector_to_plane(from_plane, to_plane, point, move_to_plane=True):
+    """
+    Projects a point onto an infinite plane defined by two transforms, from_plane and to_plane.
+    
+    :param str from_plane: The source plane transform.
+    :param str to_plane: The target plane transform.
+    :param om.MVector point: The point to project onto the plane.
+    :return: The projected point as an MVector.
+    :rtype: om.MVector
+    """
+    # Get the world-space positions of the from_plane and to_plane
+    point_position = om.MVector(cmds.xform(point, query=True, worldSpace=True, translation=True))
+    from_position = om.MVector(cmds.xform(from_plane, query=True, worldSpace=True, translation=True))
+    to_position = om.MVector(cmds.xform(to_plane, query=True, worldSpace=True, translation=True))
+    
+    # Calculate the direction from the from_plane to the to_plane
+    plane_direction = to_position - from_position
+    
+    # Normalize the direction to get the plane's normal
+    plane_direction.normalize()
+
+    # Project the point onto the plane along the normal direction
+    point_to_plane = point_position - from_position
+    dot_product = point_to_plane * plane_direction
+    projected_point = point_position - dot_product * plane_direction
+    
+    if move_to_plane:
+        cmds.xform(point, worldSpace=True, translation=(projected_point.x,
+                                                        projected_point.y,
+                                                        projected_point.z))
+    
+    directional_vector = point_position - projected_point
+    directional_vector.normalize()
+    
+    return directional_vector
+
+
+def create_debug_plane(name, position):
+    # Create the polyplane
+    if not cmds.objExists(name):
+        name = cmds.polyPlane(name=name, width=5, height=5, subdivisionsX=1, subdivisionsY=1, axis=[1,0,0])[0]
+
+        # Move the plane to the source position
+        cmds.xform(name, worldSpace=True, translation=(position))
+
+        # Turn on the normal display for visualizing the face normal
+        cmds.polyOptions(name, displayNormal=True)
+        cmds.select(name)
+        cmds.ToggleFaceNormalDisplay(name)
+
+def debug_find_points_between():
+
+    from_plane = "plane_from"
+    to_plane = "plane_to"
+    
+    
+    create_debug_plane(from_plane, position=(0, 0, 0))
+    create_debug_plane(to_plane, position=(10, 0, 0))
+    # Rotate the plane to point towards the target
+    create_rotation_from_objects(source_object=from_plane, target_object=to_plane)
+    create_rotation_from_objects(source_object=to_plane, target_object=from_plane)
+
+
+
+    # Example usage:
+    # Create pCube1 and pCube2 objects if they don't already exist, and position them
+    # from_point = create_debug_prim("from_point", position=(0, 0, 0))
+    # to_point = create_debug_prim("to_point", position=(10, 0, 0))
+    point_01 = create_debug_prim("point_01", cube_or_sphere=False, position=(5, 2, 0))  # Example, can be replaced by pSphere creation
+    point_02 = create_debug_prim("point_02", cube_or_sphere=False, position=(15, 0, 0))
+
+
+    is_point_between(from_plane, to_plane, point_01)
+
+def is_point_between(from_plane, to_plane, point_01):
+    vector_from = get_xform_as_mvector(to_plane) - get_xform_as_mvector(from_plane)
+    vector_from.normalize()
+
+    projected_point_from = vector_to_plane(from_plane, to_plane, point_01, move_to_plane=False)
+    dot_product_from = projected_point_from * vector_from
+
+    print('The projected dot product of point_01 from_plane : ', dot_product_from)
+    cmds.select(point_01)
+
+    vector_to = get_xform_as_mvector(from_plane) - get_xform_as_mvector(to_plane)
+    vector_to.normalize()
+
+    projected_point_to = vector_to_plane(to_plane, from_plane, point_01, move_to_plane=False)
+    dot_product_to = projected_point_to * vector_to
+
+    print('The projected dot product of point_01 to_plane : ', dot_product_to)
+    cmds.select(point_01)
+
+    if dot_product_from > 0 and dot_product_to > 0:
+        print( f'{point_01} is between')
+    else:
+        print( f'{point_01} is not between')
+
+
+
+
+    # points_in_between = find_points_between(from_plane, to_plane, point_list)
+
+
+    # vector_to = get_xform_as_mvector(from_plane) - get_xform_as_mvector(to_plane)
+
+
+    # projected_point_to = vector_to_plane(to_plane, from_plane, point_01)
+    # projected_point_to = project_point_to_plane(from_point, to_point, point_01)
+    
+
+    # point_list = [point_01, point_02]
+    # points_in_between = find_points_between(from_plane, to_plane, point_list)
+
+
+
+
+
+# Example Usage:
+# mesh_name = "pSphere1"  # Example mesh
+# min_point, max_point = create_oriented_bounding_box(mesh_name, debug=True)
+# print("OBB Min:", min_point)
+# print("OBB Max:", max_point)
+# calculate_oriented_bounding_box('pCylinder1')
+
+# def slerp(start_normal, end_normal, t):
+#     # Normalize vectors to ensure they are unit vectors
+#     start_normal = start_normal.normalize()
+#     end_normal = end_normal.normalize()
+
+#     # Compute the cosine of the angle between the two vectors
+#     dot = start_normal * end_normal
+
+#     # Clamp dot to avoid numerical errors
+#     dot = np.clip(dot, -1.0, 1.0)
+
+#     # If the dot product is close to 1, linearly interpolate
+#     if dot > 0.9995:
+#         return start_normal + t * (end_normal - start_normal)
+
+#     # Compute the angle between the vectors
+#     theta_0 = np.arccos(dot)  # Angle between vectors in radians
+#     theta = theta_0 * t  # Interpolated angle
+
+#     # Perform spherical interpolation
+#     sin_theta = np.sin(theta)
+#     sin_theta_0 = np.sin(theta_0)
+#     scale_start = np.cos(theta) - dot * sin_theta / sin_theta_0
+#     scale_end = sin_theta / sin_theta_0
+
+#     return (start_normal * scale_start) + (end_normal * scale_end)
+
+# def find_points_and_normals(start_vec, end_vec, start_normal, end_normal, num_points=10):
+#     points = []
+#     normals = []
+    
+#     for i in range(num_points):
+#         t = i / (num_points - 1)  # Interpolate from 0 to 1
+        
+#         # Interpolate positionp
+#         point = (start_vec * (1 - t)) + (end_vec * t)  # MVector interpolation
+#         points.append(point)
+        
+#         # Interpolate normal using slerp
+#         normal = slerp(start_normal, end_normal, t)
+#         normals.append(normal)
+    
+#     return points, normals
+
+# def get_selected_points_and_normals(start_normal, end_normal, num_points=10):
+#     """
+#     Get the selected points (vertices or control points) in Maya and apply the find_points_and_normals function to get interpolated positions and normals.
+    
+#     :param om.MVector start_normal: The normal vector at the start
+#     :param om.MVector end_normal: The normal vector at the end
+#     :param int num_points: The number of points to interpolate
+#     :return: A list of interpolated points and normals
+#     :rtype: tuple (list of om.MVector, list of om.MVector)
+#     """
+#     # Get selected vertices
+#     selected_points = cmds.ls(selection=True, flatten=True)
+#     if not selected_points:
+#         raise ValueError("No points selected. Please select points in the scene.")
+
+#     # Get positions of selected points
+#     points_positions = []
+#     for point in selected_points:
+#         pos = cmds.xform(point, query=True, worldSpace=True, translation=True)
+#         points_positions.append(om.MVector(pos[0], pos[1], pos[2]))
+
+#     # Get start and end points from the selected points
+#     start_vec = points_positions[0]  # First selected point
+#     end_vec = points_positions[-1]   # Last selected point
+
+#     # Call the function to interpolate points and normals
+#     interpolated_points, interpolated_normals = find_points_and_normals(start_vec, end_vec, start_normal, end_normal, num_points)
+    
+#     return interpolated_points, interpolated_normals
+
+
+
+def is_joint_in_skincluster(skincluster, joint):
+    # Get all joints (influences) associated with the skinCluster
+    influences = cmds.skinCluster(skincluster, query=True, influence=True)
+    # Check if the specified joint is in the list of influences
+    return joint in influences
+
+
+def get_joint_influenced_points(skincluster, joint):
+    # If the joint isn't in the skincluster, return None
+    if not is_joint_in_skincluster(skincluster, joint): return None
+
+    # Get all components influenced by the skinCluster
+    geometry = cmds.skinCluster(skincluster, query=True, geometry=True)[0]
+    component_type=''
+    geometry_type = cmds.objectType(geometry)
+    if geometry_type == 'mesh':
+        component_type = 'vtx'
+    elif geometry_type == 'nurbsCurve' or geometry_type == 'nurbsSurface':
+        component_type = 'cv'
+    elif geometry_type == 'lattice':
+        component_type = 'pt'
+    else:
+        raise ValueError(f'Unsupported geometry type: {geometry_type}')
+    
+    # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
+    cmpnts = cmds.ls(f'{geometry}.{component_type}[*]', flatten=True)
+    # if 
+    if not cmpnts: return
+
+    # Initialize lists for points and weights
+    influenced_pts = []
+    weights = []
+    indices = []
+
+    for cmpnt in cmpnts:
+        if not cmds.objExists(cmpnt): continue  # Skip if the vertex doesn't exist
+        between_bracket = re.search(r'\[(\d+)\]', cmpnt)
+        indices.append((int(between_bracket.group(1))))
+        
+
+        # Get the weight for the specific joint on this vertex
+        weight = cmds.skinPercent(skincluster, cmpnt, transform=joint, query=True)
+        
+        # If there's any weight, store the vertex and weight
+        if weight > 0.0:
+            influenced_pts.append(cmpnt)
+            weights.append(weight)
+
+    # Return the dictionary in the specified format
+    return {'geometry': geometry, 'indices': indices, 'points': influenced_pts, 'weights': weights}
+# ########################################## Usage example ###########################################
+# skin_cluster = 'skinCluster10'  # Replace with your skinCluster name
+# joint = 'RightArm'  # Replace with the joint you are checking
+# result = get_joint_influenced_points(skin_cluster, joint)
+# ####################################################################################################
+
+def get_existing_joint_weight_data(joints, mesh_only=True):
+    '''
+    :param str joints: a list of joints to find weight data for
+    :param bool mesh_only: If True skip any geometry that is not a mesh.
+                           Meant to avoid finding weighting in things like lattices, curves, etc.
+
+    :return: A dictionary of data related to weighting:
+    ```
+    # weight data map
+    {
+        joint1:  {'skincluster': {'geometry': geometry,       # dag node
+                                  'indices': indices,         # the point indices, for MfnMesh
+                                  'points': influenced_pts,   # geo.vtx[0], or .cv[0], or .pt[0]
+                                  'weights': weights},         # weight value
+                 'skincluster2': {'geometry': geometry, ...   # and so-on
+        joint2: {...
+    }
+    :rtype: dict
+    '''
+    # mesh_only will check to see if at least one influencing geometries are meshes, if not, skip
+    # mesh_only meant to avoid finding weighting in things like lattices, curves, etc.
+    return_dict = {}
+    all_skinclusters = cmds.ls(type='skinCluster')
+    for joint in joints:
+        influencing_skinclusters = []
+        for skincluster in all_skinclusters:
+            geometry = cmds.skinCluster(skincluster, query=True, geometry=True)[0]
+            if not geometry:continue  # Skip if the skinCluster has no geometry
+            
+            # Skip if 'mesh_only' is set and the geometry is not a mesh
+            if mesh_only and 'mesh' not in cmds.objectType(geometry):continue
+            
+            # Skip if the current joint does not influence this skinCluster
+            if not is_joint_in_skincluster(skincluster, joint):continue
+            
+            # Get the points influenced by this joint and their weights
+            point_weights = get_joint_influenced_points(skincluster, joint)
+            if not point_weights['points']:continue  # Skip if there are no influenced points/weights
+            
+            # for key in point_weights:
+            #     print(f'{key}: {point_weights[key]}')
+            return_dict[joint] =  {f'{skincluster}': point_weights}
+    return return_dict
+
+def weight_data_between_joints(joint_start, joint_end, weight_data):
+    '''
+    :param str joint_start: where point weighting will start
+    :param str joint_end: where point weighting will end
+    :param dict weight_data: a dictionary created by func get_existing_joint_weight_data
+
+    This is what weight data looks like:
+    # weight_data
+    {
+        joint1:  {'skincluster': {'geometry': geometry,       # dag node
+                                  'indices': indices,         # the point indices, for MfnMesh
+                                  'points': influenced_pts,   # geo.vtx[0], or .cv[0], or .pt[0]
+                                  'weights': weights},         # weight value
+                 'skincluster2': {'geometry': geometry, ...   # and so-on
+        joint2: {...
+    }
+
+
+    steps:                  
+    create a directional vector between joint_start and joint_end
+    create an infinite plane for both of these joints from the directional vector this looks like:
+        plane start normal - joint_start aiming at joint_end
+        plane end normal - joint_end aiming at joint_start
+    as long as points fall between these two normals, they will remain in the dictionary,
+    otherwise, they will be removed.
+    # implementation
+    begin looping through keys
+        then loop through skinclusters
+            from here, retrieve the geometry, create an MfnMesh (maya.api,OpenMaya)
+                use my custom fuction get_dag_path like this: om.MFnMesh(get_dag_path(mesh))
+
+                loop through the indicies, retrieve MfnMesh points from indicies, looks something like this:
+                    mfn_mesh = om.MFnMesh(get_dag_path(mesh))
+                    # Loop through each point in the mesh
+                    for i, point in enumerate(vertex_array):
+                        (do things here)
+
+                    test whether points fall between the two infinite planes, if they do not, remove
+                    them from the indicies, the points, the weights, move to 
+    '''
+
+
+# # Example usage
+# start_normal = om.MVector(0, 0, 1)  # Start normal
+# end_normal = om.MVector(0, 1, 0)    # End normal
+
+# # Call the function with selected points in Maya
+# interpolated_points, interpolated_normals = get_selected_points_and_normals(start_normal, end_normal, num_points=10)
+
+# print("Interpolated Points:")
+# for point in interpolated_points:
+#     print(point)
+    
+# print("Interpolated Normals:")
+# for normal in interpolated_normals:
+#     print(normal)
+
+
+
+
 
 def intersections_in_direction(mesh, point_from, point_to):
     # Create and normalize the direction vector
@@ -327,32 +908,7 @@ def get_point_bounding_box(maya_vertices):
     # print('bbox.depth : ',bbox.depth)
     # print('bbox.height : ',bbox.height)
     # print('bbox.width : ',bbox.width)
-
-    # cube_name = 'bounds_cube'
-    # if cmds.objExists(cube_name):
-    #     cmds.delete(cube_name)
-
-    # width = max_x - min_x  # X-axis difference (length)
-    # height = max_y - min_y  # Y-axis difference (width)
-    # depth = max_z - min_z  # Z-axis difference (height)
-    # print('width : ', width)
-    # print('height : ', height)
-    # print('depth : ', depth)
-
-    # # Create the poly cube with the correct dimensions
-    # cube_name = cmds.polyCube(w=width, h=height, d=depth, name='bounds_cube')[0]
-
-    # # Get the center of the bounding box
-    # bbox_center = bbox.center
-
-    # # Move the cube to the center of the bounding box
-    # cmds.xform(cube_name, translation=(bbox_center.x, bbox_center.y, bbox_center.z))
-
-
     return bbox
-
-
-
 
 
 def select_limbs_from_points(points, mesh, limb_type='legs', debug=True):
@@ -478,10 +1034,6 @@ def sort_points_by_jnt_crv(joints, mesh,  curve):
     axis_plane = joint_data['axis_plane']
     jnt_chain_dir = joint_data['joint_chain_direction']
     joint_param_dict = {jnt:idx for idx, jnt in enumerate(jnts)}
-    # print('jnts : ', jnts)
-    # print('ordered_joint_positions : ', ordered_joint_positions)
-    # print('axis_plane : ', axis_plane)
-    # print('joint_chain_direction : ', jnt_chain_dir)
     bounds_dict={'axis': axis_plane,
                  'axis_bounds_start': ordered_joint_positions[0],
                  'axis_bounds_end': ordered_joint_positions[-1]}

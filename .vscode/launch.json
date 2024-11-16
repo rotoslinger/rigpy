@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Send to Maya",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/send_code_to_maya.py",  // This will be a script that communicates with Maya
+            "console": "integratedTerminal",
+            "args": [],
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }
+    ]
+}

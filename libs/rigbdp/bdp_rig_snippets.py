@@ -1,20 +1,7 @@
-from functools import wraps
 from maya import cmds
 
 OTHER = ['M_freeze_env', 'spaces_grp', 'modules_grp', 'rigGeo_ndStep_grp', 'rigGeo_200_grp']
 
-
-def suppress_warnings(func):
-    # suppress_warnings, but only while the function runs. Func is safe to fail.  Do not use with quit() or sys.exit()!
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        cmds.scriptEditorInfo(suppressWarnings=True)
-        result = func(*args, **kwargs)
-        cmds.scriptEditorInfo(suppressWarnings=False)
-        return result
-    return wrapper
-
-@suppress_warnings
 def setup_rig_vis(channel_box = True, hidden_in_outliner=False, skin_jnt_vis=False, sculpt_jnt_vis=True):
     # create divider
     if not cmds.objExists('preferences.__________________'):

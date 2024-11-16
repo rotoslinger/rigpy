@@ -1,7 +1,7 @@
 import os, importlib, glob
 from functools import wraps
 
-from rigbdp.builders import utils as builder_utils
+from rigbdp.builders.rigmods import utils as builder_utils
 
 
 def print_bookends(func):
@@ -65,7 +65,7 @@ def create_char_structure(char_name, dir_to_char, ):
 print('IMPORTING')
 @print_bookends
 def find_files(char_name, dir_to_char, new_version_number,
-               MnM_extension='.ma', ):
+               input_extension='.ma', ):
     """
     Finds specific files based on extensions in a character's directory structure.
 
@@ -89,7 +89,8 @@ def find_files(char_name, dir_to_char, new_version_number,
     output_dir = rf'{dir_to_char}output{sep}'
     input_dir = rf'{dir_to_char}input{sep}'
     # Find all files with the specified MnM and SHAPES extensions in their directories
-    MnM_rig_path = glob.glob(f'{input_dir}*{MnM_extension}')
+    input_rig_path = glob.glob(f'{input_dir}*{input_extension}')
+    if not input_rig_path: input_rig_path= glob.glob(f'{input_dir}*.mb')
     SHAPES_mel_paths = glob.glob(f'{SHAPES_dir}*{SHAPES_extension}')
     
     # Construct output filename based on character name and version
@@ -100,7 +101,7 @@ def find_files(char_name, dir_to_char, new_version_number,
     sdk_data_path = rf'{input_dir}{sdk_filename}'
     
     return_dict = {'char_name': char_name,
-                   'MnM_rig_path': MnM_rig_path[0] if MnM_rig_path else None,
+                   'input_rig_path': input_rig_path[0] if input_rig_path else None,
                    'SHAPES_mel_paths': SHAPES_mel_paths,
                    'build_output_path': build_output_path,
                    'sdk_data_path': sdk_data_path,
@@ -110,6 +111,55 @@ def find_files(char_name, dir_to_char, new_version_number,
     builder_utils.print_dict_as_code(return_dict)
     # Return a dictionary with all found file paths
     return return_dict
+
+
+
+def return_found_files(char_name, dir_to_char, new_version_number):
+    """
+    Finds specific files based on extensions in a character's directory structure.
+
+    Args:
+        char_dir (str): The base directory where the character data is stored.
+        char_name (str): Character name to build paths dynamically.
+        new_version (int): Version number to format the output filename.
+        MnM_extension (str): The file extension for the MnM build file.
+        SHAPES_extension (str): The file extension for SHAPES MEL files.
+        sdk_filename (str): The name of the sdk data file.
+
+    Returns:
+        dict: Dictionary with paths for MnM rig, SHAPES MEL files, output, and sdk data.
+    """
+    input_extension = '.ma'
+    sep = os.path.sep
+    SHAPES_extension='.mel'
+    sdk_filename='sdk_data.json'
+    # Constructing the dynamic character directory and other subdirectories
+    dir_to_char = rf'{dir_to_char}{sep}{char_name}{sep}'
+    SHAPES_dir = rf'{dir_to_char}SHAPES{sep}'
+    output_dir = rf'{dir_to_char}output{sep}'
+    input_dir = rf'{dir_to_char}input{sep}'
+    # Find all files with the specified MnM and SHAPES extensions in their directories
+    input_rig_path = glob.glob(f'{input_dir}*{input_extension}')
+    if not input_rig_path: input_rig_path= glob.glob(f'{input_dir}*.mb')
+    SHAPES_mel_paths = glob.glob(f'{SHAPES_dir}*{SHAPES_extension}')
+    
+    # Construct output filename based on character name and version
+    output_filename = f'{char_name}_RIG_200_v{new_version_number:03}.ma'
+    build_output_path = f'{output_dir}{output_filename}'
+
+    # Path for sdk data file
+    sdk_data_path = rf'{input_dir}{sdk_filename}'
+    
+    return_dict = {'char_name': char_name,
+                   'input_rig_path': input_rig_path[0] if input_rig_path else None,
+                   'SHAPES_mel_paths': SHAPES_mel_paths,
+                   'build_output_path': build_output_path,
+                   'sdk_data_path': sdk_data_path,
+                   }
+    # Return a dictionary with all found file paths
+    return return_dict
+
+
 
 # Example usage
 # char_name = 'jsh'

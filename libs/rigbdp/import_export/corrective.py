@@ -134,3 +134,30 @@ def select_blendshape(char_name):
     # important to keep an eye on the blendshape in node editor
     # use this script to easily select it
     cmds.select(f"M_{char_name}_base_body_geoShapes_blendShape")
+
+def get_blendshape_connections(blendshape):
+    full_attr = f'{blendshape}.weight'
+    # Get all indices for the compound array
+    bs_weight_names = cmds.listAttr(full_attr, multi=True)
+    connections = []
+    for name in bs_weight_names:
+        full_attr = f'{blendshape}.{name}'
+        connections.append(cmds.listConnections(full_attr, plugs=True, source=True, destination=False)[0])
+        print(connections)
+    for idx, name in enumerate(bs_weight_names):
+        print(f'{blendshape}.{name}')
+        print(connections[idx])
+        # cmds.disconnectAttr(connections[idx], f'{blendshape}.{name}')
+
+
+def blendshape_connection_export(blendshape):
+
+    # get the in and out connections
+    get_blendshape_connections(blendshape)
+
+
+def SHAPES_export():
+    '''
+    shpUI_customExportPathCheck
+    
+    '''

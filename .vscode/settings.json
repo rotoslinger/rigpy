@@ -1,0 +1,12 @@
+{
+    
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}/relative/path/to/libs:${env:PYTHONPATH}"
+    },
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}\\relative\\path\\to\\libs;%PYTHONPATH%"
+    },
+    "terminal.integrated.env.osx": {
+        "PYTHONPATH": "${workspaceFolder}/relative/path/to/libs:${env:PYTHONPATH}"
+    }
+}

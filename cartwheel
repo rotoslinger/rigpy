@@ -1,3 +1,7 @@
+# to open a mayapy headless session and run a python package use:
+# cd 'C:\Program Files\Autodesk\Maya2024\bin\mayapy'
+# pkg.py
+
 ./mayapy C:\\Users\\harri\\Documents\\Github\\CARTWHEEL\\ModelServing\\inference_post_processor\\maya_scripts\\maya_auto_rig_and_retarget.py
     --character_name "Axel"
     --prefix "anim_"

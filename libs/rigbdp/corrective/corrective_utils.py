@@ -87,10 +87,6 @@ def match_mesh_verts(source_mesh, target_mesh):
     set_mesh_vertices(target_mesh, source_positions)
 
     print(f"Successfully matched the vertex positions of '{target_mesh}' to '{source_mesh}'.")
-
 # Example usage:
 # Replace 'sourceMesh' and 'targetMesh' with your actual mesh names
 #match_mesh_verts('sourceMesh', 'targetMesh')
-
-
-

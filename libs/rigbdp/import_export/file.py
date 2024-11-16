@@ -4,7 +4,7 @@ import importlib, time, os, shutil, sys, re, json, glob, platform, fnmatch
 from functools import wraps
 
 # third party
-from maya import cmds
+#from maya import cmds
 
 # custom
 import rpdecorator
@@ -582,9 +582,20 @@ def recursive_print_directory_map(root_folder, indent="", num_padding=4, back_nu
 
 ####################################### Usage ########################################
 # Example usage:
-# recursive_print_directory_map(r'C:\Users\harri\Documents\BDP\cha\SHAPES_transfer')
+# recursive_print_directory_map(r'C:\Users\harri\Documents\BDP\build\dickMancy')
 ######################################################################################
-
+# ├── dickMancy 
+# │   ├──── body.mb  ------------------------------------------------------ # local working file
+# │   └──── dickMancy_RIG_200_v025.ma ------------------------------------- # local working file
+# │   ├──── SHAPES
+# │   │     ├──── M_dickMancy_base_body_geoShapes_blendShape.mel
+# │   │     ├──── M_dickMancy_base_body_geoShapes_blendShape_shapes.mb
+# │   │     └──── M_dickMancy_base_body_geoShapes_blendShape_shapes_data.mb
+# │   ├──── input
+# │   │     └──── dickMancy_RIG_200_v025.ma ------------------------------- # Minimo file
+# │   └──── output
+# │         ├──── dickMancy_RIG_200_v013.ma ------------------------------- # output file (old version)
+# │         └──── dickMancy_RIG_200_v026.ma ------------------------------- # output file
 
 def get_files_of_type(path_to_rel_path, rel_path='../data/corrective_data', file_type='json'):
     """

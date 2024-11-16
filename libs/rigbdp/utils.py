@@ -5,6 +5,52 @@ from maya import cmds
 from rigbdp.build import locking
 reload(locking)
 
+import maya.cmds as cmds
+
+def return_created_nodes(func):
+    """
+    This function is to return nodes created by a maya command that doesn't return anything
+    
+    It does this by:
+    1. find all nodes before function runs
+    2. run function
+    3. find all nodes after the function runs
+    4. find the nodes that were not in the first list - these are the created nodes
+    5. return the newly created nodes
+
+    """
+    def wrapper(*args, **kwargs):
+        # Get the current list of all nodes in the scene before running the function
+        all_nodes_before = cmds.ls(long=True)
+        
+        # Run the function
+        result = func(*args, **kwargs)
+        
+        # Get the list of all nodes after running the function
+        all_nodes_after = cmds.ls(long=True)
+        
+        # Find the difference between nodes before and after
+        created_nodes = list(set(all_nodes_after) - set(all_nodes_before))
+        
+        return created_nodes  # Return the list of created nodes
+    
+    return wrapper
+
+# Example usage:
+
+# @return_created_nodes
+# def example_function():
+#     """
+#     Example function to demonstrate node creation.
+#     """
+#     # Create a cube (this will be tracked)
+#     cmds.polyCube(name="exampleCube")
+
+# # Call the wrapped function
+# created_nodes = example_function()
+# print("Created nodes:", created_nodes)
+
+
 def wrap_eyebrows():
     eyebrows_mesh = f'*_base_fur_C_eyebrows_mesh'
     eyebrows_mesh = cmds.ls(eyebrows_mesh)
@@ -16,7 +62,18 @@ def wrap_eyebrows():
     body_mesh = f'{char_name}_base_body_geo'
     cmds.delete(eyebrows_mesh, constructionHistory=True)
     cmds.select(eyebrows_mesh, body_mesh)
-    wrap = cmds.CreateWrap()
+    wrapped_function = return_created_nodes(cmds.CreateWrap)
+    created_nodes = wrapped_function()
+    wrap = [w for w in created_nodes if 'wrap' in cmds.objectType(w)][0]
+    wrap = cmds.rename(wrap, f'{eyebrows_mesh}_wrap')
+    # Use these settings for speed
+    cmds.setAttr(f'{wrap}.maxDistance', 1)
+    cmds.setAttr(f'{wrap}.weightThreshold', 0)
+    cmds.setAttr(f'{wrap}.autoWeightThreshold', 0)
+    cmds.setAttr(f'{wrap}.exclusiveBind', 0)
+    cmds.setAttr(f'{wrap}.falloffMode', 0)
+    cmds.setAttr(f'{body_mesh}.inflType',1)
+    # print('THIS IS THE NEW WRAP!!!! : ', wrap)
 
 def get_skinclusters_on_mesh(mesh):
     skin_clusters=[]

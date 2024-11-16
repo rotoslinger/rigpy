@@ -1,0 +1,9 @@
+[
+  {
+    "key": "ctrl+enter", 
+    "command": "workbench.action.tasks.runTask", 
+    "args": {
+      "task": "Run Hello World Python"
+    }
+  }
+]

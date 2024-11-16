@@ -1,4 +1,4 @@
-import json, statistics, re, math
+import json, statistics, re, math, inspect
 
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
@@ -585,6 +585,7 @@ def is_joint_in_skincluster(skincluster, joint):
     influences = cmds.skinCluster(skincluster, query=True, influence=True)
     # Check if the specified joint is in the list of influences
     return joint in influences
+COMPONENT_TYPE_MAP = {'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'}
 
 
 def get_joint_influenced_points(skincluster, joint):
@@ -593,16 +594,15 @@ def get_joint_influenced_points(skincluster, joint):
 
     # Get all components influenced by the skinCluster
     geometry = cmds.skinCluster(skincluster, query=True, geometry=True)[0]
-    component_type=''
-    geometry_type = cmds.objectType(geometry)
-    if geometry_type == 'mesh':
-        component_type = 'vtx'
-    elif geometry_type == 'nurbsCurve' or geometry_type == 'nurbsSurface':
-        component_type = 'cv'
-    elif geometry_type == 'lattice':
-        component_type = 'pt'
-    else:
-        raise ValueError(f'Unsupported geometry type: {geometry_type}')
+    
+    COMPONENT_TYPE_MAP = {'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'}
+    geo_type = cmds.objectType(geometry)
+    if geo_type not in COMPONENT_TYPE_MAP.keys():
+        print(f'{__file__}:{lineno} in {function_name} - {message}')
+
+        print(f'# Warning: Unsupported geometry type: {geo_type}. Please check your use of this function')
+        return False
+    component_type = COMPONENT_TYPE_MAP[geo_type]
     
     # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
     cmpnts = cmds.ls(f'{geometry}.{component_type}[*]', flatten=True)

@@ -34,13 +34,69 @@
 			"path": "../../../maya/2024/prefs/scriptEditorTemp"
 		}
 	],
+
 	"settings": {
+		"python.defaultInterpreterPath": "..venv/bin/python",
+		"terminal.integrated.env.windows": {
+			"PYTHONPATH": "C:\\Users\\harri\\Documents\\Github\\rigpy\\libs\\CW;C:\\Users\\harri\\Documents\\Github\\rigpy\\libs;C:\\Program Files\\Autodesk\\Maya2024\\bin\\mayapy.exe;${env:USERPROFILE}\\.vscode\\extensions\\fxtd-odyssey.mayapy-1.0.4\\mayaSDK"
+		},
+		"terminal.integrated.env.linux": {
+			"PYTHONPATH": "${env:HOME}/.vscode/extensions/fxtd-odyssey.mayapy-1.0.4/mayaSDK:${workspaceFolder}/libs:${env:PYTHONPATH}"
+		},
+
+		"terminal.integrated.env.osx": {
+			"PYTHONPATH": "${env:HOME}/.vscode/extensions/fxtd-odyssey.mayapy-1.0.4/mayaSDK:${workspaceFolder}/libs:${env:PYTHONPATH}"
+		},
+
 		"cSpell.words": [
 			"infl",
+			"PYTHONPATH",
 			"rigbdp",
 			"skincluster",
 			"skinclusters",
-			"TESTBUILD"
+			"TESTBUILD",
+			"arccos",
+			"arpdecorator",
+			"asciiart",
+			"bakpath",
+			"Bary",
+			"blendshape",
+			"blendshapes",
+			"buthaina",
+			"cmpnt",
+			"cmpnts",
+			"cnsts",
+			"ffds",
+			"getargspec",
+			"harri",
+			"Hier",
+			"interp",
+			"jnts",
+			"lerp",
+			"lerps",
+			"locopedal",
+			"mayafile",
+			"mayaified",
+			"Minimo",
+			"Nurbs",
+			"outliner",
+			"pathing",
+			"pnts",
+			"rigbuild",
+			"rigpy",
+			"rpdecorator",
+			"rtype",
+			"shldr",
+			"skel",
+			"slerp",
+			"teshi",
+			"tmpcons",
+			"unnormalized",
+			"upchest",
+			"verts",
+			"xform"
+
 		]
 	}
+	
 }

@@ -81,18 +81,26 @@ build_output_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\output\jsh_RIG
 sdk_data_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\input\sdk_data.json'
 ####################################################################################################
 '''
+# To execute mel code one line at a time:
+def execute_mel_file_with_error_handling(file_path):
+    with open(file_path, 'r') as f:
+        for line in f:
+            try:
+                mel.eval(line.strip())
+            except RuntimeError as e:
+                print(f"Error executing command '{line.strip()}': {e}")
 
 
 class RigMerge:
     def __init__(self,
                  char_name,
-                 MnM_rig_path,
+                 input_rig_path,
                  SHAPES_mel_paths,
                  build_output_path,
                  sdk_data_path=None,
                  wrap_eyebrows=True):
         self.char_name = char_name
-        self.MnM_rig_path = MnM_rig_path
+        self.input_rig_path = input_rig_path
         self.build_output_path = build_output_path
         if not type(SHAPES_mel_paths) == list: SHAPES_mel_paths = [SHAPES_mel_paths]
         self.SHAPES_mel_paths = SHAPES_mel_paths
@@ -107,7 +115,7 @@ class RigMerge:
         self.wrap_eyebrows = wrap_eyebrows
 
 
-    def init_mnm_rig(self):
+    def add_vendor_rig(self):
         # 1. Create a new scene
         cmds.file(new=True, force=True)
 
@@ -128,17 +136,19 @@ class RigMerge:
 
         # NOTE: placeholder until we figure out what to do with broken ffds
         self.__deactivate_broken_ffds()
-        cmds.setAttr("preferences.showClothes", 1)
+        if cmds.objExists("preferences.showClothes"):
+            cmds.setAttr("preferences.showClothes", 1)
         cmds.file(save=True, type='mayaAscii')
 
 
-    def import_correctives(self):
+    def import_correctives(self, bs_cleanup=True):
         # # 3. Clean up the scene for corrective import
         # corrective.pre_import_bs_cleanup(char_name=self.char_name)
         
         # 3. Clean up the scene for corrective import
         for mesh in self.corrective_meshes:
-            corrective.pre_import_bs_cleanup_NEW(mesh_name=mesh)
+            if bs_cleanup:
+                corrective.pre_import_bs_cleanup_NEW(mesh_name=mesh)
 
         # 4. Import correctives
         for path in self.SHAPES_mel_paths:
@@ -163,7 +173,7 @@ class RigMerge:
 
     def __import_rig_clean(self):
 
-        cmds.file(self.MnM_rig_path, i=True, namespace=":", preserveReferences=True)
+        cmds.file(self.input_rig_path, i=True, namespace=":", preserveReferences=True)
 
         # Flatten namespaces (remove them)
         cmds.namespace(set=':')

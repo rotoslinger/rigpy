@@ -1,0 +1,117 @@
+IDE syntax highlight markers:
+# TODO: Refactor this function
+# FIXME: This will break if input is None
+# NOTE: This implementation is temporary
+# HACK: Quick workaround for deadline
+# XXX: Critical bug here, needs attention
+
+ARG TYPING (objects in lib typing that can be used to restrict arg types)
+'ChainMap',
+'Counter',
+'Deque',
+'Dict',
+'DefaultDict',
+'List',
+'OrderedDict',
+'Set',
+'FrozenSet',
+'NamedTuple',  # Not really a type.
+'TypedDict',  # Not really a type.
+'Generator',
+
+
+SENDING CODE TO MAYA:
+
+You will want to install MayaCode and MayaPy vscode plugins to send code to maya.
+Make sure you use the command below in maya in a mel script editor tab (regardless of whether you
+want to send mel or python to maya):
+
+In maya run:
+commandPort -n "localhost:1234" -stp "mel";
+
+In vscode:
+right click and select 'send python code to maya' (or mel, but who in there right mind would want
+to use that?)
+
+IF IT STOPS WORKING:
+Check the hotkeys. Happens when assigning the hotkey to ctrl+enter.
+Fix by deleting any existing binding to these keys that happens in the text editor.
+
+HOTKEY SETUP for ctrl+enter:
+
+1. Go to preferences (ctrl+shift+p on windows) and type keyboard shortcuts
+2. Search for (must be in quotes) "ctrl+enter" (there will be 38)
+3. Look at the 'When' column. Find any with 'editorTextFocus' in them
+4. Delete these hotkeys. There should only be one.
+5. Search for Maya: Send Python Code to Maya, double click, when prompted hold down ctrl+enter
+6. Now press return, or enter (depending on your keyboard) and you are done.
+
+To add to PYTHONPATH in this library:
+open this file: rigpy/vscode/workspace.code-workspace
+append to the terminal.integrated.env.linux settings
+Obviously you will want to change 'linux' to the operating system you are using, like so:
+{
+    "settings": {
+
+        "terminal.integrated.env.windows": {${workspaceFolder}\\libs;${env:HOME}\\Documents\\Github},
+        "terminal.integrated.env.linux": {${workspaceFolder}/libs:${env:HOME}\Documents\Github},
+        "terminal.integrated.env.osx": {${workspaceFolder}/libs:${env:HOME}\Documents\Github}
+    }
+}
+
+Where?
+
+This lib's settings.json is called 'workspace.code-workspace',
+it can be found in rigpy/vscode/workspace.code-workspace.
+
+here you will find settings for your python path that look like this:
+"terminal.integrated.env.linux": {"PYTHONPATH":'/path'}
+add to this using : on linux and mac and ; on windows.
+Don't forget ya commas.
+
+
+
+TL;DR
+notes:  While operating system name is usually referred to as 'platform' in python, I have chosen to
+use the more recognizable and widely used operating system or os for short even though it may not be
+technically correct.  I will also use the name mac, or mac osx in reference to the darwin platform
+to keep these explanations as 'natural human speech' as possible :D
+
+For reference operating system names are as follows:
+windows:nt        # --- Acronym for 'New Technology'
+linux/mac:posix   # --- Acronym for 'Portable Operating System Interface for Unix'
+
+Platforms as follows:
+windows:windows
+linux:linux
+mac:darwin        # --- likely reference to being an 'evolution' of Unix. Used in every mac-os,
+                        including the apple watch, ipad, etc.
+
+To add to PYTHONPATH
+
+Adding to the PYTHONPATH for the current workspace can be confusing, first you need to know where
+your user setting.json lives, and whether the file is even called 'setting.json'.
+
+In this library, the settings.json is called 'workspace.code-workspace', it can be found at the root
+under path vscode. full path looks like this: rigpy/vscode/workspace.code-workspace
+
+the PYTHONPATH setting looks like this: "terminal.integrated.env.$os": {} (os being the
+name of your operating system) the options are windows, linux, osx.
+
+my current path:
+"terminal.integrated.env.windows": {
+    "PYTHONPATH": "C:\\Users\\harri\\Documents\\Github\\rigpy\\libs\\CW;C:\\Users\\harri\\Documents\\Github\\rigpy\\libs;C:\\Program Files\\Autodesk\\Maya2024\\bin\\mayapy.exe;${env:USERPROFILE}\\.vscode\\extensions\\fxtd-odyssey.mayapy-1.0.4\\mayaSDK"
+}
+The path names are long because the relative workspace isn't being considered.
+this:
+
+"C:\\Users\\harri\\Documents\\Github\\rigpy\\libs\\CW;C:\\Users\\harri\\Documents\\Github\\rigpy\\libs"
+
+Can be shorted to a relative path, "${workspaceFolder}\\libs" because both libraries exist under the
+workspace, and under libs.
+
+Adding a folder to your workspace will trigger the PYTHONPATH to be appended for the current os. If 
+all libraries are in a Github directory that is consistent between operating systems, it would be
+possible to make the path relative to the username/Documents/Github.  For example, ${env:HOME} is
+the hard drive/username location, so ${env:HOME}/Documents/Github could be used as a cross platform
+helper in finding libraries

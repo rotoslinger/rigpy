@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Hello World Python",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-c",
+        "print('Hello World')"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "This task runs print('Hello World')"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import importlib, json
-from maya import cmds, mel
+# from maya import cmds, mel
 
 import rpdecorator
 from rigbdp import utils as rig_utils

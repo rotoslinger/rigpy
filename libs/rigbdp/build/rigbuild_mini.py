@@ -19,7 +19,7 @@ You can use the following code to do this automatically:
 
 from rigbdp.build import build_pathing
 char_name = 'jsh'
-dir_to_char = r'C:\Users\harri\Documents\BDP\build_demo'
+dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 create_char_structure(char_name=char_name, dir_to_char=dir_to_char )
 
 This will create the following structure:
@@ -66,7 +66,7 @@ structure as described in Step 1. You will to run the mel script below.
 
 # --- Generate args script
 char_name = 'jsh'
-dir_to_char = r'C:\Users\harri\Documents\BDP\build_demo'
+dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 new_version = 11
 file_paths = build_pathing.find_files(char_name=char_name, dir_to_char=dir_to_char, new_version=new_version)
 
@@ -74,11 +74,11 @@ file_paths = build_pathing.find_files(char_name=char_name, dir_to_char=dir_to_ch
 ########################################### BUILDER PATHS ##########################################
 # Copy these paths to your builder
 char_name = 'jsh'
-MnM_rig_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\input\jsh_RIG_200_v008_MnM.ma'
-SHAPES_mel_paths = [r'C:\Users\harri\Documents\BDP\build_demo\jsh\SHAPES\M_jsh_base_body_geoShapes_blendShape.mel',
-                  r'C:\Users\harri\Documents\BDP\build_demo\jsh\SHAPES\M_jsh_base_cloth_top_fabric_geoShapes_blendShape.mel']
-build_output_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\output\jsh_RIG_200_v011.ma'
-sdk_data_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\input\sdk_data.json'
+MnM_rig_path = r'C:\Users\harri\Documents\BDP\cha\jsh\input\jsh_RIG_200_v008_MnM.ma'
+SHAPES_mel_paths = [r'C:\Users\harri\Documents\BDP\cha\jsh\SHAPES\M_jsh_base_body_geoShapes_blendShape.mel',
+                  r'C:\Users\harri\Documents\BDP\cha\jsh\SHAPES\M_jsh_base_cloth_top_fabric_geoShapes_blendShape.mel']
+build_output_path = r'C:\Users\harri\Documents\BDP\cha\jsh\output\jsh_RIG_200_v011.ma'
+sdk_data_path = r'C:\Users\harri\Documents\BDP\cha\jsh\input\sdk_data.json'
 ####################################################################################################
 '''
 # To execute mel code one line at a time:
@@ -106,6 +106,8 @@ class RigMerge:
         self.SHAPES_mel_paths = SHAPES_mel_paths
         self.sdk_data_path = sdk_data_path
 
+        self.__input_file_check()
+
         # populate a list called self.corrective_meshes from the self.corrective_mel_paths
         self.__get_corrective_meshes_from_mel()
 
@@ -116,6 +118,8 @@ class RigMerge:
 
 
     def add_vendor_rig(self):
+        self.__input_file_check()
+
         # 1. Create a new scene
         cmds.file(new=True, force=True)
 
@@ -186,7 +190,12 @@ class RigMerge:
     def __deactivate_broken_ffds(self):
         cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretch_ffd.envelope', 0)
         cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretchGlobal_ffd.envelope', 0)
-        
+
+    def __input_file_check(self):
+        if not self.input_rig_path:
+            input_rig_path = os.path.split(self.build_output_path)[0].replace('output', 'input')
+            cmds.error(f'''\n{input_rig_path} does not contain any .ma or .mb files.\nPlease add a rig vendor rig before trying to build.''')
+
     def __get_corrective_meshes_from_mel(self):
         self.corrective_meshes=[]
         for name in self.SHAPES_mel_paths:
@@ -205,21 +214,38 @@ class RigMerge:
 
 # ########################################### Example Usage #########################################
 
+# #########################################################
+# # Unique char args
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 # char_name = 'jsh'
-# MnM_rig_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\input\jsh_RIG_200_v008_MnM.ma'
-# SHAPES_mel_paths = [r'C:\Users\harri\Documents\BDP\build_demo\jsh\SHAPES\M_jsh_base_body_geoShapes_blendShape.mel',
-#                   r'C:\Users\harri\Documents\BDP\build_demo\jsh\SHAPES\M_jsh_base_cloth_top_fabric_geoShapes_blendShape.mel']
-# build_output_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\output\jsh_RIG_200_v011.ma'
-# sdk_data_path = r'C:\Users\harri\Documents\BDP\build_demo\jsh\input\sdk_data.json'
+# version = 13
+# #########################################################
 
-# ### Initialize the RigMerge instance with file paths
-# rig_merge = RigMerge(
-#     char_name=char_name,
-#     MnM_rig_path=MnM_rig_path,
+# # If you don't have the directories, this will create them.
+# created_dirs = build_pathing.create_char_structure(char_name=char_name,
+#                                                    dir_to_char=dir_to_char)
+
+# # FIND BUILD FILES DYNAMICALLY - To bake out the directories see example snippets at the bottom
+# found_dirs = build_pathing.return_found_files(char_name=char_name,
+#                                               dir_to_char=dir_to_char,
+#                                               new_version_number=version)
+# char_name = found_dirs['char_name']
+# input_rig_path = found_dirs['input_rig_path']
+# SHAPES_mel_paths = found_dirs['SHAPES_mel_paths']
+# build_output_path = found_dirs['build_output_path']
+# sdk_data_path = found_dirs['sdk_data_path']
+
+
+# # Initialize your builder 
+# rig_merge = rigbuild_mini.RigMerge(
+#     char_name=char_name, 
+#     input_rig_path=input_rig_path,
 #     SHAPES_mel_paths=SHAPES_mel_paths,
 #     build_output_path=build_output_path,
 #     sdk_data_path=sdk_data_path,
+#     wrap_eyebrows=True,
 # )
+
 
 # #--------------------------------------------------------
 
@@ -229,18 +255,26 @@ class RigMerge:
 # #--------------------------------------------------------
 
 # # 1. BUILDER - Create a new scene, Import the MnM rig build
-# rig_merge.init_mnm_rig()
+# rig_merge.add_vendor_rig()
 
 
 # # 1a. custom scripts
+# rig_mods.BDP_outSkel_rigMod()
+# # bdp_rig_mods.create_lips_sculpt_jnts()
 
 # #--------------------------------------------------------
 
 # # 2. BUILDER - Import correctives
 # rig_merge.import_correctives()
-
+# geo_name='jsh_base_cloth_top_fabric_low_meshShape'
+# cmds.blendShape(geo_name, name = 'M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
+#                 before=True)
+# cmds.blendShape('M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
+#                 edit=True,
+#                 ip=r'C:\Users\harri\Documents\BDP\cha\jsh\maya_shapes\shirt.shp')
 
 # # 2a. custom scripts
+# rig_mods.connect_common_blendshapes(char_name='jsh')
 
 # #--------------------------------------------------------
 
@@ -252,4 +286,39 @@ class RigMerge:
 # # example.function()
 
 # #--------------------------------------------------------
-# # #################################################################################################
+
+# # Post build save
+# cmds.file(save=True, type='mayaAscii')
+
+# # #################################### Helpful export snippets ###################################
+
+# # # Create character directory structure
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
+# char_name = 'dmytryk'
+# created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # Set Driven Key Export
+# # # --- Export all set driven keys in the scene
+# sdk_data_path = r'C:\Users\harri\Documents\BDP\cha\dmytryk\input\sdk_data.json'
+# sdk_utils.export_sdks(filepath=sdk_data_path)
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # SHAPES load mesh error
+# # # --- if shapes won't load a mesh, run this
+# rig_utils.clean_intermediate_nodes() # - if shapes complains and won't load a mesh, run this
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # IF YOU WANT TO BAKE OUT BUILD FILES
+# # # --- Automatically find files used in the build
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
+# char_name = 'dmytryk'
+# found_dirs = build_pathing.find_files(char_name=char_name,
+#                                       dir_to_char=dir_to_char, 
+#                                       new_version_number=8)
+# # # When the output prints, paste it in BUILDER PATHS section
+
+# # ################################################################################################

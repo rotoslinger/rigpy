@@ -13,47 +13,37 @@ MODULES = [rig_utils, sdk_utils, corrective, post_scripts,
 for mod in MODULES:
     importlib.reload(mod)
 ### DYNAMIC GEN
-print('hello')
-#################################### Helpful export snippets ######################################
-# Create character directory structure
-dir_to_char = r'C:\Users\harri\Documents\BDP\build'
+
+#########################################################
+# Unique char args
+dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'aide'
-created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)   # char_name, dir_to_char, new_version, input_extension='.ma',
-# ---------------------------------------------------------------------------------------------------
-# Set Driven Key Export
-# --- Export all set driven keys in the scene
-# sdk_data_path = r'C:\Users\harri\Documents\BDP\build\aide\input\sdk_data.json'
-# sdk_utils.export_sdks(filepath=sdk_data_path)
-# ---------------------------------------------------------------------------------------------------
-# SHAPES load mesh error
-# --- if shapes won't load a mesh, run this
-# rig_utils.clean_intermediate_nodes() # - if shapes complains and won't load a mesh, run this
-# ---------------------------------------------------------------------------------------------------
-# Find build files
-# --- Automatically find files used in the build
-# dir_to_char = r'C:\Users\harri\Documents\BDP\build'
-# char_name = 'aide'
-# found_dirs = build_pathing.find_files(char_name=char_name, dir_to_char=dir_to_char, new_version_number=7, input_extension='.ma')   # char_name, dir_to_char, new_version, input_extension='.ma',
-# When the output prints, paste it in BUILDER PATHS section
-###################################################################################################
-found_dirs = build_pathing.return_found_files(char_name=char_name, dir_to_char=dir_to_char, new_version_number=7)
+version = 7
+#########################################################
+
+# If you don't have the directories, this will create them.
+created_dirs = build_pathing.create_char_structure(char_name=char_name,
+                                                   dir_to_char=dir_to_char)
+
+# FIND BUILD FILES DYNAMICALLY - To bake out the directories see example snippets at the bottom
+found_dirs = build_pathing.return_found_files(char_name=char_name,
+                                              dir_to_char=dir_to_char,
+                                              new_version_number=version)
 char_name = found_dirs['char_name']
-print(char_name)
 input_rig_path = found_dirs['input_rig_path']
 SHAPES_mel_paths = found_dirs['SHAPES_mel_paths']
 build_output_path = found_dirs['build_output_path']
 sdk_data_path = found_dirs['sdk_data_path']
 
-### Initialize the RigMerge instance with file paths
+
+# Initialize your builder 
 rig_merge = rigbuild_mini.RigMerge(
-    char_name=char_name,
+    char_name=char_name, 
     input_rig_path=input_rig_path,
     SHAPES_mel_paths=SHAPES_mel_paths,
     build_output_path=build_output_path,
     sdk_data_path=sdk_data_path,
     wrap_eyebrows=True,
-    
-
 )
 
 #--------------------------------------------------------
@@ -90,4 +80,38 @@ rig_merge.import_correctives()
 
 # Post build save
 cmds.file(save=True, type='mayaAscii')
-print('still working')
+
+
+
+# # #################################### Helpful export snippets ###################################
+
+# # # Create character directory structure
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
+# char_name = 'aid'
+# created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # Set Driven Key Export
+# # # --- Export all set driven keys in the scene
+# sdk_data_path = r'C:\Users\harri\Documents\BDP\cha\aid\input\sdk_data.json'
+# sdk_utils.export_sdks(filepath=sdk_data_path)
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # SHAPES load mesh error
+# # # --- if shapes won't load a mesh, run this
+# rig_utils.clean_intermediate_nodes() # - if shapes complains and won't load a mesh, run this
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # IF YOU WANT TO BAKE OUT BUILD FILES
+# # # --- Automatically find files used in the build
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
+# char_name = 'aid'
+# found_dirs = build_pathing.find_files(char_name=char_name,
+#                                       dir_to_char=dir_to_char, 
+#                                       new_version_number=8)
+# # # When the output prints, paste it in BUILDER PATHS section
+
+# # ################################################################################################

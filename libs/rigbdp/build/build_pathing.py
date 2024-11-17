@@ -37,7 +37,7 @@ def create_char_structure(char_name, dir_to_char, ):
     sep = os.path.sep
     
     # Construct base paths
-    char_base_dir = rf'{dir_to_char}{sep}{char_name}{sep}'  # For example: C:\Users\harri\Documents\BDP\build_demo\jsh\
+    char_base_dir = rf'{dir_to_char}{sep}{char_name}{sep}'  # For example: C:\Users\harri\Documents\BDP\cha\jsh\
     SHAPES_dir = rf'{char_base_dir}SHAPES{sep}'  # SHAPES directory for storing MEL files
     output_dir = rf'{char_base_dir}output{sep}'  # Output directory for output files
     input_dir = rf'{char_base_dir}input{sep}'  # Output directory for output files
@@ -60,7 +60,7 @@ def create_char_structure(char_name, dir_to_char, ):
 
 # # Example usage
 # char_name = 'jsh'
-# dir_to_char = r'C:\Users\harri\Documents\BDP\build_demo'
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 # create_char_structure(char_name=char_name, dir_to_char=dir_to_char )
 print('IMPORTING')
 @print_bookends
@@ -163,7 +163,7 @@ def return_found_files(char_name, dir_to_char, new_version_number):
 
 # Example usage
 # char_name = 'jsh'
-# dir_to_char = r'C:\Users\harri\Documents\BDP\build_demo'
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 # new_version = 11
 # file_paths = find_files(char_name=char_name, dir_to_char=dir_to_char, new_version=new_version)
 
@@ -172,7 +172,7 @@ def return_found_files(char_name, dir_to_char, new_version_number):
 #     sep = os.path.sep
 #     char_name = 'jsh'
 #     new_version = 11
-#     char_dir= rf'C:\Users\harri\Documents\BDP\build_demo'
+#     char_dir= rf'C:\Users\harri\Documents\BDP\cha'
 #     SHAPES_dir_name = 'SHAPES'
 #     SHAPES_mel_filenames = ['M_jsh_base_body_geoShapes_blendShape.mel',
 #                             'M_jsh_base_cloth_top_fabric_geoShapes_blendShape']
@@ -188,7 +188,7 @@ def return_found_files(char_name, dir_to_char, new_version_number):
 #     sdk_data_path=None
 
 #     ### Dynamically build paths
-#     char_dir = rf'{char_dir}{sep}{char_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\build_demo\}{jsh}{\}
+#     char_dir = rf'{char_dir}{sep}{char_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\cha\}{jsh}{\}
 #     output_filename=f'{char_name}_RIG_200_v{new_version:03}.ma' # for example --- {jsh}_RIG_200_v0{11}.ma
 #     output_dir = rf'{char_dir}{output_dir_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\cha_input\jsh\}{output}{\}
 #     SHAPES_dir = rf'{char_dir}{SHAPES_dir_name}{sep}' # for example --- {C:\Users\harri\Documents\BDP\cha_input\jsh\}{SHAPES}{\}

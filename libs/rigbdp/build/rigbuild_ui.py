@@ -127,7 +127,7 @@ def create_char_structure(char_dir, char_name):
     sep = os.path.sep
     
     # Construct base paths
-    char_base_dir = rf'{char_dir}{sep}{char_name}{sep}'  # For example: C:\Users\harri\Documents\BDP\build_demo\jsh\
+    char_base_dir = rf'{char_dir}{sep}{char_name}{sep}'  # For example: C:\Users\harri\Documents\BDP\cha\jsh\
     SHAPES_dir = rf'{char_base_dir}SHAPES{sep}'  # SHAPES directory for storing MEL files
     output_dir = rf'{char_base_dir}output{sep}'  # Output directory for output files
     input_dir = rf'{char_base_dir}input{sep}'  # Output directory for output files

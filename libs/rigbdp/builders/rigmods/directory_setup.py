@@ -6,5 +6,5 @@ reload(build_pathing)
 # --- Character directories to assist in build automation
 
 char_name = 'ally'
-dir_to_char = r'C:\Users\harri\Documents\BDP\build'
+dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)   # char_name, dir_to_char, new_version, input_extension='.ma',

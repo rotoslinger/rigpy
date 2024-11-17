@@ -582,7 +582,7 @@ def recursive_print_directory_map(root_folder, indent="", num_padding=4, back_nu
 
 ####################################### Usage ########################################
 # Example usage:
-# recursive_print_directory_map(r'C:\Users\harri\Documents\BDP\build\dickMancy')
+# recursive_print_directory_map(r'C:\Users\harri\Documents\BDP\cha\dickMancy')
 ######################################################################################
 # ├── dickMancy 
 # │   ├──── body.mb  ------------------------------------------------------ # local working file

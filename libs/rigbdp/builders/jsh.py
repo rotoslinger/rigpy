@@ -14,50 +14,38 @@ for mod in MODULES:
     importlib.reload(mod)
 ### DYNAMIC GEN
 
-#################################### Helpful export snippets ######################################
-# Create character directory structure
-dir_to_char = r'C:\Users\harri\Documents\BDP\build'
+#########################################################
+# Unique char args
+dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'jsh'
-created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)   # char_name, dir_to_char, new_version, input_extension='.ma',
-# ---------------------------------------------------------------------------------------------------
-# Set Driven Key Export
-# --- Export all set driven keys in the scene
-# sdk_data_path = r'C:\Users\harri\Documents\BDP\build\jsh\input\sdk_data.json'
-# sdk_utils.export_sdks(filepath=sdk_data_path)
-# ---------------------------------------------------------------------------------------------------
-# SHAPES load mesh error
-# --- if shapes won't load a mesh, run this
-# rig_utils.clean_intermediate_nodes() # - if shapes complains and won't load a mesh, run this
-# ---------------------------------------------------------------------------------------------------
-# Find build files
-# --- Automatically find files used in the build
-dir_to_char = r'C:\Users\harri\Documents\BDP\build'
-char_name = 'jsh'
-found_dirs = build_pathing.find_files(char_name=char_name, dir_to_char=dir_to_char, new_version_number=13, input_extension='.ma')   # char_name, dir_to_char, new_version, input_extension='.ma',
-# When the output prints, paste it in BUILDER PATHS section
-###################################################################################################
+version = 13
+#########################################################
 
-########################################### BUILDER PATHS ##########################################
-# Copy these paths to your builder
-char_name = 'jsh'
-input_rig_path = r'C:\Users\harri\Documents\BDP\build\jsh\input\jsh_RIG_200_v010MnM.ma'
-SHAPES_mel_paths = [r'C:\Users\harri\Documents\BDP\build\jsh\SHAPES\M_jsh_base_body_geoShapes_blendShape.mel']
-build_output_path = r'C:\Users\harri\Documents\BDP\build\jsh\output\jsh_RIG_200_v026.ma'
-sdk_data_path = r'C:\Users\harri\Documents\BDP\build\jsh\input\sdk_data.json'
-####################################################################################################
+# If you don't have the directories, this will create them.
+created_dirs = build_pathing.create_char_structure(char_name=char_name,
+                                                   dir_to_char=dir_to_char)
+
+# FIND BUILD FILES DYNAMICALLY - To bake out the directories see example snippets at the bottom
+found_dirs = build_pathing.return_found_files(char_name=char_name,
+                                              dir_to_char=dir_to_char,
+                                              new_version_number=version)
+char_name = found_dirs['char_name']
+input_rig_path = found_dirs['input_rig_path']
+SHAPES_mel_paths = found_dirs['SHAPES_mel_paths']
+build_output_path = found_dirs['build_output_path']
+sdk_data_path = found_dirs['sdk_data_path']
 
 
-### Initialize the RigMerge instance with file paths
+# Initialize your builder 
 rig_merge = rigbuild_mini.RigMerge(
-    char_name=char_name,
+    char_name=char_name, 
     input_rig_path=input_rig_path,
     SHAPES_mel_paths=SHAPES_mel_paths,
     build_output_path=build_output_path,
     sdk_data_path=sdk_data_path,
     wrap_eyebrows=True,
-    
-
 )
+
 
 #--------------------------------------------------------
 
@@ -83,7 +71,7 @@ cmds.blendShape(geo_name, name = 'M_jsh_base_cloth_top_fabric_low_geoShapes_blen
                 before=True)
 cmds.blendShape('M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
                 edit=True,
-                ip=r'C:\Users\harri\Documents\BDP\build\jsh\maya_shapes\shirt.shp')
+                ip=r'C:\Users\harri\Documents\BDP\cha\jsh\maya_shapes\shirt.shp')
 
 # 2a. custom scripts
 rig_mods.connect_common_blendshapes(char_name='jsh')
@@ -101,3 +89,39 @@ rig_merge.import_sdk_data()
 
 # Post build save
 cmds.file(save=True, type='mayaAscii')
+
+
+
+
+# # #################################### Helpful export snippets ###################################
+
+# # # Create character directory structure
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
+# char_name = 'jsh'
+# created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # Set Driven Key Export
+# # # --- Export all set driven keys in the scene
+# sdk_data_path = r'C:\Users\harri\Documents\BDP\cha\jsh\input\sdk_data.json'
+# sdk_utils.export_sdks(filepath=sdk_data_path)
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # SHAPES load mesh error
+# # # --- if shapes won't load a mesh, run this
+# rig_utils.clean_intermediate_nodes() # - if shapes complains and won't load a mesh, run this
+
+# # # ----------------------------------------------------------------------------------------------
+
+# # # IF YOU WANT TO BAKE OUT BUILD FILES
+# # # --- Automatically find files used in the build
+# dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
+# char_name = 'jsh'
+# found_dirs = build_pathing.find_files(char_name=char_name,
+#                                       dir_to_char=dir_to_char, 
+#                                       new_version_number=8)
+# # # When the output prints, paste it in BUILDER PATHS section
+
+# # ################################################################################################

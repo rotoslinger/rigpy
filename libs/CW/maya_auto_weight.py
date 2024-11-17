@@ -598,7 +598,7 @@ def get_joint_influenced_points(skincluster, joint):
     COMPONENT_TYPE_MAP = {'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'}
     geo_type = cmds.objectType(geometry)
     if geo_type not in COMPONENT_TYPE_MAP.keys():
-        print(f'{__file__}:{lineno} in {function_name} - {message}')
+        # print(f'{__file__}:{lineno} in {function_name} - {message}')
 
         print(f'# Warning: Unsupported geometry type: {geo_type}. Please check your use of this function')
         return False

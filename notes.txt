@@ -1,3 +1,14 @@
+        # do the dividing in list comprehensions
+        weight_start= start_len/length 
+        weight_end= end_len/length
+
+        # do the rounding in list comprehensions
+        # round to keep the values & data
+        start_len= round(start_len, decimal_places)
+        end_len= round(end_len, decimal_places)
+
+
+
 IDE syntax highlight markers:
 # TODO: Refactor this function
 # FIXME: This will break if input is None

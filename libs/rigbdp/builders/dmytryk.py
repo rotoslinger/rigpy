@@ -17,8 +17,8 @@ for mod in MODULES:
 #########################################################
 # Unique char args
 dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
-char_name = 'dickMancy'
-version = 13
+char_name = 'dmytryk'
+version = 8
 #########################################################
 
 # If you don't have the directories, this will create them.
@@ -45,7 +45,6 @@ rig_merge = rigbuild_mini.RigMerge(
     sdk_data_path=sdk_data_path,
     wrap_eyebrows=True,
 )
-
 
 #--------------------------------------------------------
 
@@ -89,14 +88,14 @@ cmds.file(save=True, type='mayaAscii')
 
 # # # Create character directory structure
 # dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
-# char_name = 'dickMancy'
+# char_name = 'dmytryk'
 # created_dirs = build_pathing.create_char_structure(char_name=char_name, dir_to_char=dir_to_char)
 
 # # # ----------------------------------------------------------------------------------------------
 
 # # # Set Driven Key Export
 # # # --- Export all set driven keys in the scene
-# sdk_data_path = r'C:\Users\harri\Documents\BDP\cha\dickMancy\input\sdk_data.json'
+# sdk_data_path = r'C:\Users\harri\Documents\BDP\cha\dmytryk\input\sdk_data.json'
 # sdk_utils.export_sdks(filepath=sdk_data_path)
 
 # # # ----------------------------------------------------------------------------------------------
@@ -110,7 +109,7 @@ cmds.file(save=True, type='mayaAscii')
 # # # IF YOU WANT TO BAKE OUT BUILD FILES
 # # # --- Automatically find files used in the build
 # dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
-# char_name = 'dickMancy'
+# char_name = 'dmytryk'
 # found_dirs = build_pathing.find_files(char_name=char_name,
 #                                       dir_to_char=dir_to_char, 
 #                                       new_version_number=8)

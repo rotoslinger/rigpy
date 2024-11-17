@@ -37,8 +37,45 @@ class Weights:
     
     def set_skin_weights(self):
         # TODO: Look at CW.skinweights_example.py for OpenMaya implementation
-        print('Ive got these cheeseburgers maaaaaaaan')
+        self.sort_by_hier_dist(self.joints)
+        skin_data = self.get_existing_joint_weight_data(self.joints)
+        format_key = lambda key: (' ' * (len(key) + 3))
+        print(self.debug_dict(skin_data))
 
+    def debug_dict(self, data, indent=0, visited=None, single_line_keys=True):
+        """
+        Debug and inspect dictionaries with nested structure.
+
+        :param dict data: The dictionary to debug.
+        :param int indent: Current indentation level.
+        :param set visited: Tracks visited objects to prevent circular references.
+        :param bool single_line_keys: If True, print nested keys on the same line until the final value.
+        """
+        visited = visited or set()  # Initialize visited set if None
+        if id(data) in visited:
+            print(f"{' ' * indent}... (circular reference detected)")
+            return
+        visited.add(id(data))
+
+        for key, value in data.items():
+            if isinstance(value, dict):
+                if single_line_keys:
+                    print(f"{{{key}: ", end="")
+                    self.debug_dict(value, indent + len(key) + 4, visited, single_line_keys)
+                else:
+                    print(f"{' ' * indent}{{{key}:")
+                    self.debug_dict(value, indent + len(key) + 4, visited, single_line_keys)
+                    print(f"{' ' * indent}}}")
+            else:
+                if single_line_keys:
+                    if list(data.keys()).index(key) == 0:
+                        print(f"  {key}: {value}")
+
+                    # Final key-value pair aligned with indentation
+                    else:
+                        print(f"{' ' * indent}{key}: {value}")
+                else:
+                    print(f"{' ' * indent}{{{key}: {value}}}")
 
     def is_joint_in_skincluster(self, skincluster, joint):
         # Get all joints (influences) associated with the skinCluster
@@ -134,7 +171,7 @@ class Weights:
                 # Get the points influenced by this joint and their weights
                 point_weights = self.get_joint_influenced_points(skincluster, joint)
                 if not point_weights['points']:continue  # Skip if there are no influenced points/weights
-                
+                # influencing_skinclusters.append(skincluster)
                 # for key in point_weights:
                 #     print(f'{key}: {point_weights[key]}')
                 return_dict[joint] =  {f'{skincluster}': point_weights}
@@ -155,15 +192,14 @@ class Weights:
         # if the parent is not in the joints, it is the start.
         # all other xforms must be descendants of start.
         if parent_check:
-            for joint in xforms:
-                parent = cmds.listRelatives(joint, parent=True)
+            for xform in xforms:
+                parent = cmds.listRelatives(xform, parent=True)
                 if not parent in xforms:
-                    start=joint
+                    start=xform
                     break
             # make sure the start is at the start of the lsit
             xforms.remove(start)
             xforms.insert(0, start)
-
         # Assuming self.get_xform_as_mvector is a method to get the position of a joint as an MVector
         xform_vectors = [self.get_xform_as_mvector(joint) for joint in xforms]
         
@@ -185,11 +221,34 @@ class Weights:
         # get start end pairs for linear blends between xforms ex: [(1, 2), (2, 3), (3, 4), (4, 5)]
         pairs = [(sorted_joints[i], sorted_joints[i+1]) for i in range(len(sorted_joints) - 1)]
 
-        print('distances : ', distances)
-        print(pairs)
-        # Output the ordered list of joint names
-        print(sorted_joints)
+        # print('distances : ', distances)
+        # print(pairs)
+        # print(sorted_joints)
+        self.joints=sorted_joints
         return sorted_joints
+
+    def find_mid_in_appendage(self, xforms):
+        # a helper the find the middle joint in an arm or a leg.
+        # must be given an upper arm, lower arm, and end joint using any
+        # there can be any number of joints between, assumes they don't
+        # have children. Combinations must be a pattern similar to one 
+        # of the following:
+        # leg, knee, foot || arm, elbow, hand
+        # Finds the one joint that has both a parent and a child in the joint chain
+        # great for twist joints.
+        middle = ''
+        for xform in xforms:
+            parent = cmds.listRelatives(xform, parent=True)
+            children = cmds.listRelatives(xform, children=True)
+            # if not parent in joint_names:
+            #     continue
+            if parent:
+                parent = [p for p in parent if p in xforms]
+            if children:
+                children = [c for c in children if c in xforms]
+            if parent and children:
+                middle = xform
+        print('middle : ', middle)
 
     def get_xform_as_mpoint(self, object_name:str)->om.MPoint:
         """
@@ -409,7 +468,6 @@ class Weights:
 
         return object
     
-    
     def create_debug_plane(self, name, position):
         # Create the polyplane
         if not cmds.objExists(name):
@@ -455,9 +513,7 @@ class Weights:
         plane_normal = end_vector - start_vector
         plane_normal.normalize()
 
-
         projected_point =self.project_point_to_plane(point_vector, plane_center, plane_normal)[0]
-
 
         # projected_point = from_vector#self.project_point_to_plane(point_vector, from_vector, plane_normal)
 
@@ -572,11 +628,6 @@ class Weights:
                 if sel_point:
                     print(f'{name} is between the planes')
 
-
-
-
-
-
     # middle = ''
     # for joint in joint_names:
     #     parent = cmds.listRelatives(joint, parent=True)
@@ -595,9 +646,8 @@ joints = ['jointtg', 'sfd', 'fgbf', 'joint5', 'joint2', 'sgv', 'joint4', 'cv']
 
 twist_weights = Weights()
 twist_weights.joints = joints
+twist_weights.sort_by_hier_dist(joints)
 twist_weights.set_skin_weights()
-print(twist_weights.sort_by_hier_dist(joints))
-
 
 # twist_weights.debug_find_points_between(do_test_objs=True)
 points = ['point_04.vtx[0]', 'point_04.vtx[1]', 'point_04.vtx[2]', 'point_04.vtx[3]', 'point_04.vtx[4]', 'point_04.vtx[5]', 'point_04.vtx[6]', 'point_04.vtx[7]', 'point_04.vtx[8]', 'point_04.vtx[9]', 'point_04.vtx[10]', 'point_04.vtx[11]', 'point_04.vtx[12]', 'point_04.vtx[13]', 'point_04.vtx[14]', 'point_04.vtx[15]', 'point_04.vtx[16]', 'point_04.vtx[17]', 'point_04.vtx[18]', 'point_04.vtx[19]', 'point_04.vtx[20]', 'point_04.vtx[21]', 'point_04.vtx[22]', 'point_04.vtx[23]', 'point_04.vtx[24]', 'point_04.vtx[25]', 'point_04.vtx[26]', 'point_04.vtx[27]', 'point_04.vtx[28]', 'point_04.vtx[29]', 'point_04.vtx[30]', 'point_04.vtx[31]', 'point_04.vtx[32]', 'point_04.vtx[33]', 'point_04.vtx[34]', 'point_04.vtx[35]', 'point_04.vtx[36]', 'point_04.vtx[37]', 'point_04.vtx[38]', 'point_04.vtx[39]', 'point_04.vtx[40]', 'point_04.vtx[41]', 'point_04.vtx[42]', 'point_04.vtx[43]', 'point_04.vtx[44]', 'point_04.vtx[45]', 'point_04.vtx[46]', 'point_04.vtx[47]', 'point_04.vtx[48]', 'point_04.vtx[49]', 'point_04.vtx[50]', 'point_04.vtx[51]', 'point_04.vtx[52]', 'point_04.vtx[53]']

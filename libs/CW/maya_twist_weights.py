@@ -23,7 +23,7 @@ class Weights:
         self.object_names = object_names
         self.skin_cluster = skin_cluster
         self.joints = joints
-
+        self.joint_pairs = []
     def get_dag_path(self, object_name: str) -> om.MDagPath:
         """
         :param object_name: Name of the object
@@ -35,12 +35,325 @@ class Weights:
         dag_path = selection_list.getDagPath(0)
         return dag_path
     
-    def set_skin_weights(self):
+    def find_points_between(self, all_points, start_joint, end_joint):
+        if not all_points or not 'vtx' in all_points[0]: return
+
+        start_plane = self.get_xform_as_mvector(start_joint)
+        end_plane = self.get_xform_as_mvector(end_joint)
+
+        # get the geom for the MFn geom obj
+        mesh = all_points[0].split('.')[0]
+        # get the indices
+        point_indices = [int(re.search(r'\[(\d+)\]', p).group(1)) for p in all_points]
+
+        # Check object type to determine which MFn geom type you will be searching through.
+        # Reference --- 'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'
+        geom = cmds.listRelatives(mesh,shapes=True)[0]
+        print(geom)
+        obj_type = cmds.objectType(geom)
+        if obj_type not in COMPONENT_TYPE_MAP.keys():
+            print(f'# Warning: Unsupported geometry type: {obj_type}. Please check your use of this function')
+            return False
+        component_type = COMPONENT_TYPE_MAP[obj_type]
+        component_type='vtx'
+        mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
+        point_vectors=[mfn_mesh.getPoint(p, space=om.MSpace.kWorld) for p in point_indices]
+        point_vectors = [om.MVector(p.x,p.y,p.z) for p in point_vectors]
+        # first, find the point indices between.
+        idx_list, point_vectors = self.points_between_startend(point_indices,
+                                                               point_vectors,
+                                                               start_plane,
+                                                               end_plane)
+        return idx_list, point_vectors, start_plane, end_plane
+        
+    def traverse_nested_dict(self, data):
+        """
+        Loop through every level of a nested dictionary non-destructively.
+
+        :param dict data: The dictionary to traverse.
+        :return: None
+        """
+        stack = [data]  # Initialize the stack with the top-level dictionary
+        idx = 0  # Keep track of current processing index
+        
+        while idx < len(stack):
+            current_dict = stack[idx]  # Access the current dictionary
+            idx += 1  # Move to the next item in the stack
+
+            if isinstance(current_dict, dict):
+                for key, value in current_dict.items():
+                    print(f"Key: {key}, Value: {value}")  # Print the current key-value pair
+                    if isinstance(value, dict):
+                        stack.append(value)  # Add nested dictionaries to the stack
+
+    def get_joint_influenced_points(self, skincluster, joint):
+        # If the joint isn't in the skincluster, return None
+        if not self.is_joint_in_skincluster(skincluster, joint): return None
+
+        # Get all components influenced by the skinCluster
+        geometry = cmds.skinCluster(skincluster, query=True, geometry=True)[0]
+        
+        COMPONENT_TYPE_MAP = {'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'}
+        geo_type = cmds.objectType(geometry)
+        if geo_type not in COMPONENT_TYPE_MAP.keys():
+            print(textwrap.dedent(f'''\# Warning: Unsupported geometry type: {geo_type}.
+            # Please check your use of this function'''))
+            return False
+        component_type = COMPONENT_TYPE_MAP[geo_type]
+        
+        # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
+        cmpnts = cmds.ls(f'{geometry}.{component_type}[*]', flatten=True)
+        # if 
+        if not cmpnts: return
+
+        # Initialize lists for points and weights
+        influenced_pts = []
+        weights = []
+        indices = []
+
+        for cmpnt in cmpnts:
+            if not cmds.objExists(cmpnt): continue  # Skip if the vertex doesn't exist
+            between_bracket = re.search(r'\[(\d+)\]', cmpnt)
+            indices.append((int(between_bracket.group(1))))
+            
+
+            # Get the weight for the specific joint on this vertex
+            weight = cmds.skinPercent(skincluster, cmpnt, transform=joint, query=True)
+            
+            # If there's any weight, store the vertex and weight
+            if weight > 0.0:
+                influenced_pts.append(cmpnt)
+                weights.append(weight)
+
+        # Return the dictionary in the specified format
+        return {'geometry': geometry,
+                'indices': indices,
+                'points': influenced_pts,
+                'weights': weights}
+
+
+
+    def find_joints_weights(self, joints):
+        all_skinclusters = cmds.ls(type='skinCluster')
+        return_dict = {}
+        # init joint lists
+        for joint in joints:
+            return_dict[joint] = {}
+        for skin in all_skinclusters:
+            influences = cmds.skinCluster(skin, query=True, weightedInfluence=True)
+            if not influences:continue
+            influences = [j for j in joints if j in influences]
+            if not influences:continue
+            # print('skincluster : ', skin)
+            for joint in influences:
+                skin_dict = self.get_joint_influenced_points(skin, joint)
+                # skin_dict[skin] = skin
+                return_dict[joint][skin] = skin_dict
+                # print('skin dict : ', skin_dict)
+        return return_dict
+    
+    def all_points_in_geom(self, geom):
+        geo_type = cmds.objectType(geom)
+        if geo_type == 'transform':
+            # geom = f'{geom}Shape'
+            geo_type = cmds.objectType(f'{geom}Shape')
+        if geo_type not in COMPONENT_TYPE_MAP.keys():
+            print(textwrap.dedent(f'''\# Warning: Unsupported geometry type: {geo_type}.
+            # Please check your use of this function'''))
+            return False
+        component_type = COMPONENT_TYPE_MAP[geo_type]
+        
+        # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
+        points = cmds.ls(f'{geom}.{component_type}[*]', flatten=True)
+        print('points : ', points)
+        point_indices = [int(re.search(r'\[(\d+)\]', p).group(1)) for p in points]
+
+        return points, point_indices
+
+
+    def joint_weight_data(self, joint):
+        all_skinclusters = cmds.ls(type='skinCluster')
+        return_dict = {}
+        geometries = set()
+        # init joint lists
+        for skin in all_skinclusters:
+            influences = cmds.skinCluster(skin, query=True, weightedInfluence=True)
+            if not influences:continue
+            if not joint in influences:continue
+            # first, get geometry
+            geom = cmds.skinCluster(skin, geometry=True, query=True)[0]
+            geometries.append(cmds.skinCluster(skin, geometry=True, query=True)[0])
+            points, points_indicies = self.all_points_in_geom(geom)
+            # print('skincluster : ', skin)
+            skin_dict = self.get_joint_influenced_points(skin, joint)
+            # skin_dict[skin] = skin
+            return_dict[joint][skin] = skin_dict
+            # print('skin dict : ', skin_dict)
+        return return_dict, list(geometries)
+
+    def get_influence_data(self, joints):
+        # get all joint influenced geometry
+        all_skinclusters = cmds.ls(type='skinCluster')
+        geometries = set()
+        skinclusters = set()
+        for skin in all_skinclusters:
+            influences = cmds.skinCluster(skin, query=True, weightedInfluence=True)
+            if not influences:continue
+            for joint in joints:
+                if not joint in influences:continue
+                geom = cmds.skinCluster(skin, geometry=True, query=True)[0]
+                geometries.add(cmds.skinCluster(skin, geometry=True, query=True)[0])
+                skinclusters.add(skin)
+        return list(skinclusters), list(geometries)
+
+    def set_pair_weights(self, joints, geom, skincluster):
+        ''
+        joints, pairs = self.sort_by_hier_dist(joints)
+        start_plane = self.get_xform_as_mvector(joints[0])
+        end_plane = self.get_xform_as_mvector(joints[-1])
+
+        point_indices = self.all_points_in_geom(geom)[1]
+
+        mfn_mesh = om.MFnMesh(self.get_dag_path(geom))
+        point_vectors=[mfn_mesh.getPoint(p, space=om.MSpace.kWorld) for p in point_indices]
+        point_vectors = [om.MVector(p.x,p.y,p.z) for p in point_vectors]
+        point_indices, point_vectors = self.points_between_startend(point_indices,
+                                                                    point_vectors,
+                                                                    start_plane,
+                                                                    end_plane)
+        influences = cmds.skinCluster(skincluster, query=True, influence=True)
+        # check if the joints are in the skincluster, if not add them locked, and then unlock them.
+        for joint in joints:
+            if not joint in influences:
+                cmds.skinCluster(skincluster, edit=True, addInfluence=joint, weight=0)
+
+        for pair in pairs:
+            jnt_start, jnt_end = pair
+            joint_start = self.get_xform_as_mvector(jnt_start)
+            joint_end = self.get_xform_as_mvector(jnt_end)
+            print (f'jnt_start: {jnt_start} > jnt_end: {jnt_end}')
+            indices, p_vectors = self.points_between_startend(point_indices,
+                                                                        point_vectors,
+                                                                        joint_start,
+                                                                        joint_end)
+            wt_start, wt_end = self.mix_values_between(p_vectors, joint_start, joint_end,
+                                                       start_inherit_wts=False,
+                                                       end_inherit_wts=False,
+                                                       decimal_place=False
+                                                       )
+            point_names = [f'{geom}.vtx[{idx}]' for idx in indices]
+            for geo, si, ei in zip(point_names, wt_start, wt_end):
+                # same time, to avoid breaking normalization.
+                cmds.skinPercent(skincluster, geo, transformValue=[(jnt_start, ei), (jnt_end,si)])
+            # self.color_points_start_end(point_names, (wt_start, wt_end))
+
+    def distribute_startend_weight(self, start_joint, end_joint, joints):
         # TODO: Look at CW.skinweights_example.py for OpenMaya implementation
-        self.sort_by_hier_dist(self.joints)
-        skin_data = self.get_existing_joint_weight_data(self.joints)
-        format_key = lambda key: (' ' * (len(key) + 3))
-        print(self.debug_dict(skin_data))
+
+        # find all points to act on.
+        skinclusters, geometries = self.get_influence_data([start_joint, end_joint])
+        for skin, geo in zip(skinclusters, geometries):
+            self.set_pair_weights(joints, geo, skin)
+
+        return
+
+
+        
+        # for all pieces of geometry that the joint could, be weighted to.
+
+
+        # get
+        self.joints, self.joint_pairs = self.sort_by_hier_dist(self.joints)
+        start_joint = self.joints[0]
+        end_joint = self.joints[-1]
+
+        self.joint_vectors = []
+        for joint in self.joints:
+            self.joint_vectors.append(self.get_xform_as_mvector(joint))
+            # print(self.debug_dict(skin_data))
+        joint_weights = self.find_joints_weights(self.joints)
+        # get geoms, get mfn_mesh point vectors,
+        all_point_data = {}
+        for joint in joint_weights:
+            for skincluster in joint_weights[joint]:
+                skin_dict = joint_weights[joint][skincluster]
+                # Split geom name from point - body.vtx[34] -> body
+                geom = joint_weights[joint][skincluster]['points'][0].split('.')[0]
+                # get all of the points in the geometry, regardless of their weight vals
+                points, point_indices = self.all_points_in_geom(geom)
+                if not points: continue
+                if joint_weights[joint][skincluster]['geometry'] in all_point_data.keys(): continue
+                
+                mfn_mesh = om.MFnMesh(self.get_dag_path(joint_weights[joint][skincluster]['geometry']))
+                point_vectors=[mfn_mesh.getPoint(p, space=om.MSpace.kWorld) for p in point_indices]
+                point_vectors = [om.MVector(p.x,p.y,p.z) for p in point_vectors]
+                point_indices, point_vectors = self.points_between_startend(point_indices,
+                                                                            point_vectors,
+                                                                            start_plane,
+                                                                            end_plane)
+                # print(weight_data['geometry'])
+                all_point_data[joint_weights[joint][skincluster]['geometry']] = {'points':point_indices,'point_vectors':point_vectors}
+
+                # for entry in skin_dict:
+                #     print(f'{entry}: {skin_dict[entry]}')
+
+        # map, for reference
+        # pair_weights = {skincluster_name{joint_name_start:weights, joint_name_end:weights}}
+
+        pair_weights = {}
+        for joint_pair in self.joint_pairs:
+            inherit_weights=[]
+            start_jnt, end_jnt = joint_pair
+            if start_jnt == start_joint:
+                inherit_weights = joint_weights[start_joint]
+            if end_jnt == end_joint:
+                inherit_weights = joint_weights[end_jnt]
+                print(inherit_weights)
+            
+
+            # print(f'pair : {start_jnt}, {end_jnt}')
+
+            continue
+            for skincluster in joint_weights[joint]:
+                points, point_indices = self.all_points_in_geom(skincluster['geometry'])
+                if not points: continue
+
+                # first, find the point indices between.
+                idx_list, point_vectors = self.points_between_startend(point_indices,
+                                                                            point_vectors, 
+                                                                        start_plane, end_plane)
+
+                self.points_between_startend(point_indices, start_jnt, end_jnt)
+                print(skincluster)
+        # print(skin_data)
+        # data = self.find_in_nested(skin_data)
+        # print(data)
+        # get points between start and end. This will be the
+        # self.find_points_between
+        # point_names = [f'{mesh}.vtx[{idx}]' for idx in idx_list]
+        # self.color_points_start_end(point_names, (srt_wts, end_wts))
+
+        # cmds.select(point_names)
+
+        # sort the joints, get joint_pairs, ordered_joints
+        # get the existing weights, per joint. skin_data
+        # start pair loop.
+        # get points between pair, pair_points
+        # do the mix_vals_by_distance
+            # exception for the first pair you will inherit start weights
+            # exception for the last pair you will inherit end weights
+            # set the weight values with skinpercent:
+                # cmds.skinPercent(skin, geom, value=0.1, normalize = True)
+
+                # #if you have trouble forcing values to be exact, force the normalization:
+                # cmds.skinPercent(skin, geom, value=0.1, normalize = False)
+                # # after setting, then normalize
+                # cmds.skinPercent(skin, geom, value=0.1, normalize = True)
+                # # normalize to fix any weirdness. Possibly remove small weights at .0001? 
+                # cmds.skinCluster(skin , e = True, forceNormalizeWeights = True)
+
+
+
 
     def debug_dict(self, data, indent=0, visited=None, single_line_keys=True):
         """
@@ -225,7 +538,7 @@ class Weights:
         # print(pairs)
         # print(sorted_joints)
         self.joints=sorted_joints
-        return sorted_joints
+        return sorted_joints, pairs
 
     def find_mid_in_appendage(self, xforms):
         # a helper the find the middle joint in an arm or a leg.
@@ -644,14 +957,27 @@ class Weights:
 joints = ['jointtg', 'sfd', 'fgbf', 'joint5', 'joint2', 'sgv', 'joint4', 'cv']
 
 
-twist_weights = Weights()
-twist_weights.joints = joints
-twist_weights.sort_by_hier_dist(joints)
-twist_weights.set_skin_weights()
 
 # twist_weights.debug_find_points_between(do_test_objs=True)
-points = ['point_04.vtx[0]', 'point_04.vtx[1]', 'point_04.vtx[2]', 'point_04.vtx[3]', 'point_04.vtx[4]', 'point_04.vtx[5]', 'point_04.vtx[6]', 'point_04.vtx[7]', 'point_04.vtx[8]', 'point_04.vtx[9]', 'point_04.vtx[10]', 'point_04.vtx[11]', 'point_04.vtx[12]', 'point_04.vtx[13]', 'point_04.vtx[14]', 'point_04.vtx[15]', 'point_04.vtx[16]', 'point_04.vtx[17]', 'point_04.vtx[18]', 'point_04.vtx[19]', 'point_04.vtx[20]', 'point_04.vtx[21]', 'point_04.vtx[22]', 'point_04.vtx[23]', 'point_04.vtx[24]', 'point_04.vtx[25]', 'point_04.vtx[26]', 'point_04.vtx[27]', 'point_04.vtx[28]', 'point_04.vtx[29]', 'point_04.vtx[30]', 'point_04.vtx[31]', 'point_04.vtx[32]', 'point_04.vtx[33]', 'point_04.vtx[34]', 'point_04.vtx[35]', 'point_04.vtx[36]', 'point_04.vtx[37]', 'point_04.vtx[38]', 'point_04.vtx[39]', 'point_04.vtx[40]', 'point_04.vtx[41]', 'point_04.vtx[42]', 'point_04.vtx[43]', 'point_04.vtx[44]', 'point_04.vtx[45]', 'point_04.vtx[46]', 'point_04.vtx[47]', 'point_04.vtx[48]', 'point_04.vtx[49]', 'point_04.vtx[50]', 'point_04.vtx[51]', 'point_04.vtx[52]', 'point_04.vtx[53]']
+all_points = ['point_04.vtx[0]', 'point_04.vtx[1]', 'point_04.vtx[2]', 'point_04.vtx[3]', 'point_04.vtx[4]', 'point_04.vtx[5]', 'point_04.vtx[6]', 'point_04.vtx[7]', 'point_04.vtx[8]', 'point_04.vtx[9]', 'point_04.vtx[10]', 'point_04.vtx[11]', 'point_04.vtx[12]', 'point_04.vtx[13]', 'point_04.vtx[14]', 'point_04.vtx[15]', 'point_04.vtx[16]', 'point_04.vtx[17]', 'point_04.vtx[18]', 'point_04.vtx[19]', 'point_04.vtx[20]', 'point_04.vtx[21]', 'point_04.vtx[22]', 'point_04.vtx[23]', 'point_04.vtx[24]', 'point_04.vtx[25]', 'point_04.vtx[26]', 'point_04.vtx[27]', 'point_04.vtx[28]', 'point_04.vtx[29]', 'point_04.vtx[30]', 'point_04.vtx[31]', 'point_04.vtx[32]', 'point_04.vtx[33]', 'point_04.vtx[34]', 'point_04.vtx[35]', 'point_04.vtx[36]', 'point_04.vtx[37]', 'point_04.vtx[38]', 'point_04.vtx[39]', 'point_04.vtx[40]', 'point_04.vtx[41]', 'point_04.vtx[42]', 'point_04.vtx[43]', 'point_04.vtx[44]', 'point_04.vtx[45]', 'point_04.vtx[46]', 'point_04.vtx[47]', 'point_04.vtx[48]', 'point_04.vtx[49]', 'point_04.vtx[50]', 'point_04.vtx[51]', 'point_04.vtx[52]', 'point_04.vtx[53]']
 joints = ['jointtg', 'sfd', 'fgbf', 'joint5', 'joint2', 'sgv', 'joint4', 'cv']
+joints = ['RightArm','RightArm_out_bind_tw01', 'RightArm_out_bind_tw02', 'RightArm_out_bind_tw03', 'RightArm_out_bind_tw04', 'RightArm_out_bind_tw05', 'RightForeArm']
+joints = ['RightArm_out_bind_tw00', 'RightArm_out_bind_tw01', 'RightArm_out_bind_tw02', 'RightArm_out_bind_tw03', 'RightArm_out_bind_tw04', 'RightArm_out_bind_tw05', 'RightArm', 'RightForeArm', 'RightForeArm_out_bind_tw00', 'RightForeArm_out_bind_tw01', 'RightForeArm_out_bind_tw02', 'RightForeArm_out_bind_tw03', 'RightForeArm_out_bind_tw04', 'RightForeArm_out_bind_tw05', 'RightHand']
+
+# distribute_joints = ['RightArm_out_bind_tw01', 'RightArm_out_bind_tw02', 'RightArm_out_bind_tw03', 'RightArm_out_bind_tw04', 'RightArm_out_bind_tw05' ]
+
+twist_weights = Weights()
+twist_weights.joints = joints
+# twist_weights.set_pair_weights(joints=joints, geom='point_04', skincluster='skinCluster1')
+twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightHand',joints=joints)
+
+# twist_weights.sort_by_hier_dist(joints)
+# twist_weights.distribute_startend_weight(start_joint='RightArm',
+#                                          end_joint='RightForeArm',
+#                                          distribute_joints=[distribute_joints])
+
+
+
 
 # twist_weights.debug_find_points_between(points, do_test_objs=False)
 

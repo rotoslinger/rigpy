@@ -66,26 +66,6 @@ class Weights:
                                                                end_plane)
         return idx_list, point_vectors, start_plane, end_plane
         
-    def traverse_nested_dict(self, data):
-        """
-        Loop through every level of a nested dictionary non-destructively.
-
-        :param dict data: The dictionary to traverse.
-        :return: None
-        """
-        stack = [data]  # Initialize the stack with the top-level dictionary
-        idx = 0  # Keep track of current processing index
-        
-        while idx < len(stack):
-            current_dict = stack[idx]  # Access the current dictionary
-            idx += 1  # Move to the next item in the stack
-
-            if isinstance(current_dict, dict):
-                for key, value in current_dict.items():
-                    print(f"Key: {key}, Value: {value}")  # Print the current key-value pair
-                    if isinstance(value, dict):
-                        stack.append(value)  # Add nested dictionaries to the stack
-
     def get_joint_influenced_points(self, skincluster, joint):
         # If the joint isn't in the skincluster, return None
         if not self.is_joint_in_skincluster(skincluster, joint): return None
@@ -969,7 +949,24 @@ joints = ['RightArm_out_bind_tw00', 'RightArm_out_bind_tw01', 'RightArm_out_bind
 twist_weights = Weights()
 twist_weights.joints = joints
 # twist_weights.set_pair_weights(joints=joints, geom='point_04', skincluster='skinCluster1')
-twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightHand',joints=joints)
+up_arm_jnts = ['RightArm','RightArm_out_bind_tw01', 'RightArm_out_bind_tw02', 'RightArm_out_bind_tw03', 'RightArm_out_bind_tw04', 'RightArm_out_bind_tw05', 'RightForeArm']
+lo_arm_jnts = ['RightForeArm', 'RightForeArm_out_bind_tw01', 'RightForeArm_out_bind_tw02', 'RightForeArm_out_bind_tw03', 'RightForeArm_out_bind_tw04', 'RightForeArm_out_bind_tw05', 'RightHand']
+
+twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightForearm',joints=up_arm_jnts)
+twist_weights.distribute_startend_weight(start_joint='RightForearm',end_joint='RightHand',joints=lo_arm_jnts)
+
+
+
+# NOTE: Add a threshold attribute to the points between and another to the mix
+# this simply increases the vector distance by a small amount.
+# POINTS BETWEEN Threshold start, threshold end.
+# test by selecting so you can see what different values do.
+# same for mix values
+
+# Inherit weights!!!
+# inherit
+
+
 
 # twist_weights.sort_by_hier_dist(joints)
 # twist_weights.distribute_startend_weight(start_joint='RightArm',

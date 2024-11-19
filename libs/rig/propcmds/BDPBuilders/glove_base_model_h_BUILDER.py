@@ -38,7 +38,7 @@ def create_std_rig(name = "glove_rig"):
                                     root_pos_offset=(0, 2 ,0),
                                     debug = True)
     counter = 1 
-    finger_names = ["pinky", "ring", "midddle", "index", "thumb"]
+    finger_names = ["pinky", "ring", "middle", "index", "thumb"]
     finger_x_offsets = [4,2,0,-2,-4]
     for idx, finger in enumerate(finger_names):
         prop_base.simple_component(side = "",

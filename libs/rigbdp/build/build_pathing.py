@@ -142,7 +142,7 @@ def return_found_files(char_name, dir_to_char, new_version_number):
     input_rig_path = glob.glob(f'{input_dir}*{input_extension}')
     if not input_rig_path: input_rig_path= glob.glob(f'{input_dir}*.mb')
     SHAPES_mel_paths = glob.glob(f'{SHAPES_dir}*{SHAPES_extension}')
-    
+    bs_connection_maps = glob.glob(f"{input_dir}BsConnMap_*")
     # Construct output filename based on character name and version
     output_filename = f'{char_name}_RIG_200_v{new_version_number:03}.ma'
     build_output_path = f'{output_dir}{output_filename}'
@@ -155,6 +155,7 @@ def return_found_files(char_name, dir_to_char, new_version_number):
                    'SHAPES_mel_paths': SHAPES_mel_paths,
                    'build_output_path': build_output_path,
                    'sdk_data_path': sdk_data_path,
+                   'bs_connection_maps': bs_connection_maps,
                    }
     # Return a dictionary with all found file paths
     return return_dict

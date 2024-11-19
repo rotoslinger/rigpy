@@ -98,13 +98,16 @@ class RigMerge:
                  SHAPES_mel_paths,
                  build_output_path,
                  sdk_data_path=None,
-                 wrap_eyebrows=True):
+                 wrap_eyebrows=True,
+                 nowake_build=False,
+                 bs_conn_paths=None):
         self.char_name = char_name
         self.input_rig_path = input_rig_path
         self.build_output_path = build_output_path
         if not type(SHAPES_mel_paths) == list: SHAPES_mel_paths = [SHAPES_mel_paths]
         self.SHAPES_mel_paths = SHAPES_mel_paths
         self.sdk_data_path = sdk_data_path
+        self.bs_conn_paths = bs_conn_paths
 
         self.__input_file_check()
 
@@ -115,6 +118,7 @@ class RigMerge:
         self.SHAPES_mel_paths = [p.replace('\\', '/' ) for p in self.SHAPES_mel_paths]
         self.build_output_path = self.build_output_path.replace('\\', '/' )
         self.wrap_eyebrows = wrap_eyebrows
+        self.nowake_build = nowake_build
 
 
     def add_vendor_rig(self):
@@ -132,16 +136,9 @@ class RigMerge:
 
         # If build output path given, save file
         cmds.file(rename=self.build_output_path)
-        vis_rig.setup_rig_vis(channel_box = True,
-                              hidden_in_outliner=False,
-                              skin_jnt_vis=False, sculpt_jnt_vis=False)
-        if self.wrap_eyebrows:
-            rig_utils.wrap_eyebrows()
 
         # NOTE: placeholder until we figure out what to do with broken ffds
-        self.__deactivate_broken_ffds()
-        if cmds.objExists("preferences.showClothes"):
-            cmds.setAttr("preferences.showClothes", 1)
+        self.__minimo_add_vendor_overs()
         cmds.file(save=True, type='mayaAscii')
 
 
@@ -150,9 +147,9 @@ class RigMerge:
         # corrective.pre_import_bs_cleanup(char_name=self.char_name)
         
         # 3. Clean up the scene for corrective import
-        for mesh in self.corrective_meshes:
+        for blendshape in self.corrective_blendshapes:
             if bs_cleanup:
-                corrective.pre_import_bs_cleanup_NEW(mesh_name=mesh)
+                corrective.SHAPES_blendshape_cleanup(blendshape)
 
         # 4. Import correctives
         for path in self.SHAPES_mel_paths:
@@ -169,6 +166,12 @@ class RigMerge:
         rig_utils.clean_intermediate_nodes()
 
 
+        if self.bs_conn_paths:
+            for bs_path in self.bs_conn_paths:
+                corrective.reconnect_blendshapes(bs_path)
+
+
+
     def import_sdk_data(self):
         # 5. Import and rebuild set driven key data
         sdk_utils.import_sdks(self.sdk_data_path)
@@ -176,7 +179,6 @@ class RigMerge:
 
 
     def __import_rig_clean(self):
-
         cmds.file(self.input_rig_path, i=True, namespace=":", preserveReferences=True)
 
         # Flatten namespaces (remove them)
@@ -187,9 +189,22 @@ class RigMerge:
                 cmds.namespace(force=True, moveNamespace=(ns, ':'))
                 cmds.namespace(removeNamespace=ns)
 
-    def __deactivate_broken_ffds(self):
+    def __minimo_add_vendor_overs(self):
+        if self.nowake_build:return
+        vis_rig.setup_rig_vis(channel_box = True,
+                              hidden_in_outliner=False,
+                              skin_jnt_vis=False, sculpt_jnt_vis=False)
+        if self.wrap_eyebrows:
+            rig_utils.wrap_eyebrows()
+
         cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretch_ffd.envelope', 0)
         cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretchGlobal_ffd.envelope', 0)
+        if cmds.objExists("preferences.showClothes"):
+            cmds.setAttr("preferences.showClothes", 1)
+
+    def __nowake_post_corrective_overs(self):
+        if self.bs_conn_paths:
+            ''
 
     def __input_file_check(self):
         if not self.input_rig_path:
@@ -197,20 +212,22 @@ class RigMerge:
             cmds.error(f'''\n{input_rig_path} does not contain any .ma or .mb files.\nPlease add a rig vendor rig before trying to build.''')
 
     def __get_corrective_meshes_from_mel(self):
-        self.corrective_meshes=[]
+        self.corrective_blendshapes=[]
         for name in self.SHAPES_mel_paths:
             _,tail = os.path.split(name)
             name, _ = os.path.splitext(tail)
+            print('Found SHAPES data for: ', name)
+            self.corrective_blendshapes.append(name)
 
-            prefix = 'M_'
-            suffix = 'Shapes_blendShape'
-            # Check if the blendshape name contains the expected prefix and suffix
-            if name.startswith(prefix) and name.endswith(suffix):
-                # Strip the prefix and suffix to extract the mesh name
-                mesh_name = name[len(prefix):-len(suffix)]
-                self.corrective_meshes.append(mesh_name)
-            else:
-                continue
+            # prefix = 'M_'
+            # suffix = 'Shapes_blendShape'
+            # # Check if the blendshape name contains the expected prefix and suffix
+            # if name.startswith(prefix) and name.endswith(suffix):
+            #     # Strip the prefix and suffix to extract the mesh name
+            #     mesh_name = name[len(prefix):-len(suffix)]
+            #     self.corrective_meshes.append(mesh_name)
+            # else:
+            #     continue
 
 # ########################################### Example Usage #########################################
 

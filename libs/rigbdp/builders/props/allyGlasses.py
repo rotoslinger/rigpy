@@ -10,7 +10,7 @@ importlib.reload(stdavars)
 importlib.reload(prop_singleton)
 importlib.reload(tag_utils)
 
-def create_std_rig(name = "Prop"):
+def create_std_rig(name = "allyGlasses"):
     rig_root = misc.create_rig_hier(name=name)
     std_avars = stdavars.create_stdavar_ctrl(side = "C",
                                             skel_parent = rig_root.skeleton_grp,
@@ -59,3 +59,6 @@ def create_std_rig(name = "Prop"):
                                 joint_parent=glasses.joints[0],
 
                                 debug = True)
+
+
+create_std_rig()

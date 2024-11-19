@@ -29,12 +29,13 @@ created_dirs = build_pathing.create_char_structure(char_name=char_name,
 found_dirs = build_pathing.return_found_files(char_name=char_name,
                                               dir_to_char=dir_to_char,
                                               new_version_number=version)
+
 char_name = found_dirs['char_name']
 input_rig_path = found_dirs['input_rig_path']
 SHAPES_mel_paths = found_dirs['SHAPES_mel_paths']
 build_output_path = found_dirs['build_output_path']
 sdk_data_path = found_dirs['sdk_data_path']
-
+bs_conn_paths = found_dirs['bs_connection_maps']
 
 # Initialize your builder 
 rig_merge = rigbuild_mini.RigMerge(
@@ -43,7 +44,9 @@ rig_merge = rigbuild_mini.RigMerge(
     SHAPES_mel_paths=SHAPES_mel_paths,
     build_output_path=build_output_path,
     sdk_data_path=sdk_data_path,
+    bs_conn_paths=bs_conn_paths,
     wrap_eyebrows=True,
+    nowake_build=True
 )
 
 #--------------------------------------------------------

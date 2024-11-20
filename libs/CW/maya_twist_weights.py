@@ -24,6 +24,7 @@ class Weights:
         self.skin_cluster = skin_cluster
         self.joints = joints
         self.joint_pairs = []
+
     def get_dag_path(self, object_name: str) -> om.MDagPath:
         """
         :param object_name: Name of the object
@@ -34,104 +35,18 @@ class Weights:
         selection_list.add(object_name)
         dag_path = selection_list.getDagPath(0)
         return dag_path
-    
-    def find_points_between(self, all_points, start_joint, end_joint):
-        if not all_points or not 'vtx' in all_points[0]: return
 
-        start_plane = self.get_xform_as_mvector(start_joint)
-        end_plane = self.get_xform_as_mvector(end_joint)
+    def get_dependency_node(self, object_name: str) -> om.MObject:
+        """
+        :param object_name: Name of the object
+        :return: MDagPath of the object
+        Utility function to get the DAG path of an object.
+        """
+        selection_list = om.MSelectionList()
+        selection_list.add(object_name)
+        dag_path = selection_list.getDependNode(0)
+        return dag_path
 
-        # get the geom for the MFn geom obj
-        mesh = all_points[0].split('.')[0]
-        # get the indices
-        point_indices = [int(re.search(r'\[(\d+)\]', p).group(1)) for p in all_points]
-
-        # Check object type to determine which MFn geom type you will be searching through.
-        # Reference --- 'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'
-        geom = cmds.listRelatives(mesh,shapes=True)[0]
-        print(geom)
-        obj_type = cmds.objectType(geom)
-        if obj_type not in COMPONENT_TYPE_MAP.keys():
-            print(f'# Warning: Unsupported geometry type: {obj_type}. Please check your use of this function')
-            return False
-        component_type = COMPONENT_TYPE_MAP[obj_type]
-        component_type='vtx'
-        mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
-        point_vectors=[mfn_mesh.getPoint(p, space=om.MSpace.kWorld) for p in point_indices]
-        point_vectors = [om.MVector(p.x,p.y,p.z) for p in point_vectors]
-        # first, find the point indices between.
-        idx_list, point_vectors = self.points_between_startend(point_indices,
-                                                               point_vectors,
-                                                               start_plane,
-                                                               end_plane)
-        return idx_list, point_vectors, start_plane, end_plane
-        
-    def get_joint_influenced_points(self, skincluster, joint):
-        # If the joint isn't in the skincluster, return None
-        if not self.is_joint_in_skincluster(skincluster, joint): return None
-
-        # Get all components influenced by the skinCluster
-        geometry = cmds.skinCluster(skincluster, query=True, geometry=True)[0]
-        
-        COMPONENT_TYPE_MAP = {'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'}
-        geo_type = cmds.objectType(geometry)
-        if geo_type not in COMPONENT_TYPE_MAP.keys():
-            print(textwrap.dedent(f'''\# Warning: Unsupported geometry type: {geo_type}.
-            # Please check your use of this function'''))
-            return False
-        component_type = COMPONENT_TYPE_MAP[geo_type]
-        
-        # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
-        cmpnts = cmds.ls(f'{geometry}.{component_type}[*]', flatten=True)
-        # if 
-        if not cmpnts: return
-
-        # Initialize lists for points and weights
-        influenced_pts = []
-        weights = []
-        indices = []
-
-        for cmpnt in cmpnts:
-            if not cmds.objExists(cmpnt): continue  # Skip if the vertex doesn't exist
-            between_bracket = re.search(r'\[(\d+)\]', cmpnt)
-            indices.append((int(between_bracket.group(1))))
-            
-
-            # Get the weight for the specific joint on this vertex
-            weight = cmds.skinPercent(skincluster, cmpnt, transform=joint, query=True)
-            
-            # If there's any weight, store the vertex and weight
-            if weight > 0.0:
-                influenced_pts.append(cmpnt)
-                weights.append(weight)
-
-        # Return the dictionary in the specified format
-        return {'geometry': geometry,
-                'indices': indices,
-                'points': influenced_pts,
-                'weights': weights}
-
-
-
-    def find_joints_weights(self, joints):
-        all_skinclusters = cmds.ls(type='skinCluster')
-        return_dict = {}
-        # init joint lists
-        for joint in joints:
-            return_dict[joint] = {}
-        for skin in all_skinclusters:
-            influences = cmds.skinCluster(skin, query=True, weightedInfluence=True)
-            if not influences:continue
-            influences = [j for j in joints if j in influences]
-            if not influences:continue
-            # print('skincluster : ', skin)
-            for joint in influences:
-                skin_dict = self.get_joint_influenced_points(skin, joint)
-                # skin_dict[skin] = skin
-                return_dict[joint][skin] = skin_dict
-                # print('skin dict : ', skin_dict)
-        return return_dict
-    
     def all_points_in_geom(self, geom):
         geo_type = cmds.objectType(geom)
         if geo_type == 'transform':
@@ -145,31 +60,9 @@ class Weights:
         
         # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
         points = cmds.ls(f'{geom}.{component_type}[*]', flatten=True)
-        print('points : ', points)
         point_indices = [int(re.search(r'\[(\d+)\]', p).group(1)) for p in points]
 
         return points, point_indices
-
-
-    def joint_weight_data(self, joint):
-        all_skinclusters = cmds.ls(type='skinCluster')
-        return_dict = {}
-        geometries = set()
-        # init joint lists
-        for skin in all_skinclusters:
-            influences = cmds.skinCluster(skin, query=True, weightedInfluence=True)
-            if not influences:continue
-            if not joint in influences:continue
-            # first, get geometry
-            geom = cmds.skinCluster(skin, geometry=True, query=True)[0]
-            geometries.append(cmds.skinCluster(skin, geometry=True, query=True)[0])
-            points, points_indicies = self.all_points_in_geom(geom)
-            # print('skincluster : ', skin)
-            skin_dict = self.get_joint_influenced_points(skin, joint)
-            # skin_dict[skin] = skin
-            return_dict[joint][skin] = skin_dict
-            # print('skin dict : ', skin_dict)
-        return return_dict, list(geometries)
 
     def get_influence_data(self, joints):
         # get all joint influenced geometry
@@ -179,15 +72,14 @@ class Weights:
         for skin in all_skinclusters:
             influences = cmds.skinCluster(skin, query=True, weightedInfluence=True)
             if not influences:continue
-            for joint in joints:
-                if not joint in influences:continue
-                geom = cmds.skinCluster(skin, geometry=True, query=True)[0]
-                geometries.add(cmds.skinCluster(skin, geometry=True, query=True)[0])
-                skinclusters.add(skin)
+            if not any(joint in influences for joint in joints):continue
+            geom = cmds.skinCluster(skin, geometry=True, query=True)[0]
+            geometries.add(geom)
+            skinclusters.add(skin)
+
         return list(skinclusters), list(geometries)
 
     def set_pair_weights(self, joints, geom, skincluster):
-        ''
         joints, pairs = self.sort_by_hier_dist(joints)
         start_plane = self.get_xform_as_mvector(joints[0])
         end_plane = self.get_xform_as_mvector(joints[-1])
@@ -201,17 +93,14 @@ class Weights:
                                                                     point_vectors,
                                                                     start_plane,
                                                                     end_plane)
-        influences = cmds.skinCluster(skincluster, query=True, influence=True)
-        # check if the joints are in the skincluster, if not add them locked, and then unlock them.
-        for joint in joints:
-            if not joint in influences:
-                cmds.skinCluster(skincluster, edit=True, addInfluence=joint, weight=0)
+        r_point_names = [f'{geom}.vtx[{idx}]' for idx in point_indices]
+
+        # self.safe_add_influences(joints, skincluster)
 
         for pair in pairs:
             jnt_start, jnt_end = pair
             joint_start = self.get_xform_as_mvector(jnt_start)
             joint_end = self.get_xform_as_mvector(jnt_end)
-            print (f'jnt_start: {jnt_start} > jnt_end: {jnt_end}')
             indices, p_vectors = self.points_between_startend(point_indices,
                                                                         point_vectors,
                                                                         joint_start,
@@ -226,149 +115,252 @@ class Weights:
                 # same time, to avoid breaking normalization.
                 cmds.skinPercent(skincluster, geo, transformValue=[(jnt_start, ei), (jnt_end,si)])
             # self.color_points_start_end(point_names, (wt_start, wt_end))
+        return r_point_names
+
+    def safe_add_influences(self, joints, skincluster):
+        # safely adds any joints that are currently not in the skincluster
+        # If the joint(s) is already in the skin cluster it will not be added
+        influences = cmds.skinCluster(skincluster, query=True, influence=True)
+        # check if the joints are in the skincluster, if not add them locked, and then unlock them.
+        for joint in joints:
+            if not joint in influences:
+                cmds.skinCluster(skincluster, edit=True, addInfluence=joint, weight=0)
 
     def distribute_startend_weight(self, start_joint, end_joint, joints):
         # TODO: Look at CW.skinweights_example.py for OpenMaya implementation
+        joints = self.sort_by_hier_dist(joints)[0]
+
+        # if any of the start joint weight is in the end joint weight you need to
+        # swap with the end joint
+        point_names=[]
 
         # find all points to act on.
         skinclusters, geometries = self.get_influence_data([start_joint, end_joint])
+        
         for skin, geo in zip(skinclusters, geometries):
-            self.set_pair_weights(joints, geo, skin)
+            # because you are distributing weights between start and end joint, any weighting
+            # from the start joint on the end joint (elbow to hand) will need to be moved to the
+            # second to last joint in the joints list.
+            self.safe_add_influences(joints, skin)
+            # self.move_skinweights(skin, geo, start_joint, joints[-2])
+            point_names+=self.set_pair_weights(joints, geo, skin)
 
-        return
+
+        # if any of the start joint weight is in the end joint weight you need to
+        # swap with the second to last joint
+        # print(cmds.skinCluster('skinCluster8',  edit = True, selectInfluenceVerts='RightForeArm'))
+        # print(cmds.skinCluster('skinCluster8',  query = True, dui = True, selectInfluenceVerts=True))
+
+
+        # TODO: make sure to get a union of any overlapping weights.
+        cmds.select(cl=True)
+        print(cmds.skinCluster('skinCluster9',  edit = True, selectInfluenceVerts='RightForeArm'))
+        points1 = cmds.ls(sl=True, fl=True)
+        cmds.select(cl=True)
+        print(cmds.skinCluster('skinCluster9',  edit = True, selectInfluenceVerts='RightHand'))
+        points2 = cmds.ls(sl=True, fl=True)
+        common_values = list(set(points1) & set(points2))
+        
+        cmds.select(common_values)
+        # print(points)
+        # selectInfluenceVerts
+
+
+        # cmds.select(point_names)
+    
+    def decompress_slice_indices(self, list_with_slices):
+        indices = []
+
+        # Loop through each selection string in the list
+        for selection_str in list_with_slices:
+            # Find all range patterns or single indices
+            matches = re.findall(r'\[(\d+):(\d+)\]|\[(\d+)\]', selection_str)
+            
+            for match in matches:
+                if match[0] and match[1]:  # Range match
+                    start, end = int(match[0]), int(match[1])
+                    indices.extend(range(start, end))  # Add all indices in the range
+                elif match[2]:  # Single index match
+                    indices.append(int(match[2]))  # Add the single index
+        
+        return indices
+
+
+    # def get_points_in(self, skinCluster, mesh, source_jnt, dest_jnt):
+    #     mesh_shape = self.get_dag_path(mesh)
+
+
+    # def move_skinweights(self, skinCluster, mesh, source_jnt, dest_jnt):
+    #     # moves skin weights from one bone to another
+
+    #     mesh_shape = self.get_dag_path(mesh)
+    #     # mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
+    #     fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+    #     source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
+    #     destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
+    #     source_joint = om.MIntArray([source_joint])
+    #     destination_joint = om.MIntArray([destination_joint])
+
+    #     # source_joint = self.get_dag_path(source_jnt)
+    #     # destination_joint = self.get_dag_path(dest_jnt)
+
+    #     sel_list, weight_list = fnSkinCluster.getPointsAffectedByInfluence(self.get_dag_path(source_jnt))
+    #     # sel_list = sel_list.getSelectionStrings()	
+    #     # om.MSelectionList
+    #     sel_list = list(sel_list.getSelectionStrings())
+    #     maya_list= sel_list
+    #     if maya_list and 'Body_geo' in maya_list[0]:
+    #         cmds.select(maya_list)
+    #         print(maya_list)
+    #         return
+    #     cpnt_indices = self.decompress_slice_indices(sel_list)
+    #     print('these are the specific component, indices ', cpnt_indices)
+        
+
+        
+    #     # cpnt_indices = self.all_points_in_geom(mesh)[1]
+    #     # print('these are all indices ', cpnt_indices)
+
+    #     cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+    #     om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
+    #     print('This is the component list ', cpnt_list)
+
+
+    #     if not cpnt_list: return
 
 
         
-        # for all pieces of geometry that the joint could, be weighted to.
-
-
-        # get
-        self.joints, self.joint_pairs = self.sort_by_hier_dist(self.joints)
-        start_joint = self.joints[0]
-        end_joint = self.joints[-1]
-
-        self.joint_vectors = []
-        for joint in self.joints:
-            self.joint_vectors.append(self.get_xform_as_mvector(joint))
-            # print(self.debug_dict(skin_data))
-        joint_weights = self.find_joints_weights(self.joints)
-        # get geoms, get mfn_mesh point vectors,
-        all_point_data = {}
-        for joint in joint_weights:
-            for skincluster in joint_weights[joint]:
-                skin_dict = joint_weights[joint][skincluster]
-                # Split geom name from point - body.vtx[34] -> body
-                geom = joint_weights[joint][skincluster]['points'][0].split('.')[0]
-                # get all of the points in the geometry, regardless of their weight vals
-                points, point_indices = self.all_points_in_geom(geom)
-                if not points: continue
-                if joint_weights[joint][skincluster]['geometry'] in all_point_data.keys(): continue
-                
-                mfn_mesh = om.MFnMesh(self.get_dag_path(joint_weights[joint][skincluster]['geometry']))
-                point_vectors=[mfn_mesh.getPoint(p, space=om.MSpace.kWorld) for p in point_indices]
-                point_vectors = [om.MVector(p.x,p.y,p.z) for p in point_vectors]
-                point_indices, point_vectors = self.points_between_startend(point_indices,
-                                                                            point_vectors,
-                                                                            start_plane,
-                                                                            end_plane)
-                # print(weight_data['geometry'])
-                all_point_data[joint_weights[joint][skincluster]['geometry']] = {'points':point_indices,'point_vectors':point_vectors}
-
-                # for entry in skin_dict:
-                #     print(f'{entry}: {skin_dict[entry]}')
-
-        # map, for reference
-        # pair_weights = {skincluster_name{joint_name_start:weights, joint_name_end:weights}}
-
-        pair_weights = {}
-        for joint_pair in self.joint_pairs:
-            inherit_weights=[]
-            start_jnt, end_jnt = joint_pair
-            if start_jnt == start_joint:
-                inherit_weights = joint_weights[start_joint]
-            if end_jnt == end_joint:
-                inherit_weights = joint_weights[end_jnt]
-                print(inherit_weights)
-            
-
-            # print(f'pair : {start_jnt}, {end_jnt}')
-
-            continue
-            for skincluster in joint_weights[joint]:
-                points, point_indices = self.all_points_in_geom(skincluster['geometry'])
-                if not points: continue
-
-                # first, find the point indices between.
-                idx_list, point_vectors = self.points_between_startend(point_indices,
-                                                                            point_vectors, 
-                                                                        start_plane, end_plane)
-
-                self.points_between_startend(point_indices, start_jnt, end_jnt)
-                print(skincluster)
-        # print(skin_data)
-        # data = self.find_in_nested(skin_data)
-        # print(data)
-        # get points between start and end. This will be the
-        # self.find_points_between
-        # point_names = [f'{mesh}.vtx[{idx}]' for idx in idx_list]
-        # self.color_points_start_end(point_names, (srt_wts, end_wts))
-
-        # cmds.select(point_names)
-
-        # sort the joints, get joint_pairs, ordered_joints
-        # get the existing weights, per joint. skin_data
-        # start pair loop.
-        # get points between pair, pair_points
-        # do the mix_vals_by_distance
-            # exception for the first pair you will inherit start weights
-            # exception for the last pair you will inherit end weights
-            # set the weight values with skinpercent:
-                # cmds.skinPercent(skin, geom, value=0.1, normalize = True)
-
-                # #if you have trouble forcing values to be exact, force the normalization:
-                # cmds.skinPercent(skin, geom, value=0.1, normalize = False)
-                # # after setting, then normalize
-                # cmds.skinPercent(skin, geom, value=0.1, normalize = True)
-                # # normalize to fix any weirdness. Possibly remove small weights at .0001? 
-                # cmds.skinCluster(skin , e = True, forceNormalizeWeights = True)
+    #     skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
 
 
 
+    #     zero_weight_list = [0.0] * len(cpnt_indices)
+    #     zero_weight_list = om.MDoubleArray(zero_weight_list)
 
-    def debug_dict(self, data, indent=0, visited=None, single_line_keys=True):
+    #     # cpnt_indices = self.all_points_in_geom(mesh)[1]
+    #     source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
+    #     destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
+
+    #     for idx in cpnt_indices:
+
+    #         cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+    #         om.MFnSingleIndexedComponent(cpnt_list).addElement(idx)
+    #         weight_val = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
+    #         fnSkinCluster.setWeights(mesh_shape,
+    #                                 cpnt_list,
+    #                                 source_joint,
+    #                                 0.0,
+    #                                 normalize=False)
+    #         fnSkinCluster.setWeights(mesh_shape,
+    #                                 cpnt_list,
+    #                                 destination_joint,
+    #                                 1.0,
+    #                                 normalize=False)
+        
+
+
+    def move_skinweights(self, skinCluster, mesh, source_jnt, dest_jnt):
+        # moves skin weights from one bone to another
+
+        mesh_shape = self.get_dag_path(mesh)
+        mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
+        fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+        source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
+        destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
+        source_joint = om.MIntArray([source_joint])
+        destination_joint = om.MIntArray([destination_joint])
+
+        # source_joint = self.get_dag_path(source_jnt)
+        # destination_joint = self.get_dag_path(dest_jnt)
+
+        sel_list, weight_list = fnSkinCluster.getPointsAffectedByInfluence(self.get_dag_path(dest_jnt))
+        # sel_list = sel_list.getSelectionStrings()	
+        # om.MSelectionList
+        sel_list = list(sel_list.getSelectionStrings())
+        cpnt_indices = self.decompress_slice_indices(sel_list)
+        print('these are the specific component, indices ', cpnt_indices)
+        
+
+
+        cpnt_indices = self.all_points_in_geom(mesh)[1]
+        print('these are all indices ', cpnt_indices)
+
+        cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+        om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
+
+
+        if not cpnt_list: return
+
+
+        
+        skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
+
+
+
+        zero_weight_list = [0.0] * len(cpnt_indices)
+        zero_weight_list = om.MDoubleArray(zero_weight_list)
+
+        # cpnt_indices = self.all_points_in_geom(mesh)[1]
+
+
+        fnSkinCluster.setWeights(mesh_shape,
+                                 cpnt_list,
+                                 source_joint,
+                                 zero_weight_list,
+                                 normalize=True)
+        fnSkinCluster.setWeights(mesh_shape,
+                                 cpnt_list,
+                                 destination_joint,
+                                 skin_weights,
+                                 normalize=True)
+        # * shape       (MDagPath) - object being deformed by the skinCluster
+        # * components   (MObject) - the components to set weights on
+        # * influence        (int) - physical index of a single influence object
+        # * weight         (float) - single weight to be applied to all components.
+        # * influences (MIntArray) - physical indices of several influence objects.
+        # * weights (MDoubleArray) - weights to be used with several influence objects.
+        # * normalize       (bool) - if True, normalize weights on other influence objects
+        # * returnOldWeights(bool) - if True, return the old weights, otherwise return None
+
+
+        # remove weights from source_jnt influence with normalize
+
+        # add weights to dest_jnt influence with normalize
+
+        # getWeights(shape, components) -> (MDoubleArray, int)
+        # getWeights(shape, components, influence) -> MDoubleArray
+        # getWeights(shape, components, influences) -> MDoubleArray
+        # setWeights(shape, components, influence, weight, normalize=True, returnOldWeights=False) -> None or MDoubleArray
+        # setWeights(shape, components, influences, weights, normalize=True, returnOldWeights=False) -> None or MDoubleArray
+
+
+    def debug_dict(self, data, indent=0, visited=None, print_dict=False):
         """
-        Debug and inspect dictionaries with nested structure.
-
+        An alternative to json.dumps. Creates a cascading key:value.
         :param dict data: The dictionary to debug.
         :param int indent: Current indentation level.
         :param set visited: Tracks visited objects to prevent circular references.
         :param bool single_line_keys: If True, print nested keys on the same line until the final value.
         """
         visited = visited or set()  # Initialize visited set if None
+        output = []  # Initialize an empty list to accumulate the output
         if id(data) in visited:
-            print(f"{' ' * indent}... (circular reference detected)")
-            return
+            output.append(f"{' ' * indent}... (circular reference detected)")
+            return '\n'.join(output)
         visited.add(id(data))
 
         for key, value in data.items():
             if isinstance(value, dict):
-                if single_line_keys:
-                    print(f"{{{key}: ", end="")
-                    self.debug_dict(value, indent + len(key) + 4, visited, single_line_keys)
-                else:
-                    print(f"{' ' * indent}{{{key}:")
-                    self.debug_dict(value, indent + len(key) + 4, visited, single_line_keys)
-                    print(f"{' ' * indent}}}")
+                    output.append(f"{' ' * indent}{{{key}:")
+                    output.append(self.debug_dict(value, indent + len(key) + 4, visited))
+                    output.append(f"{' ' * indent}}}")
             else:
-                if single_line_keys:
-                    if list(data.keys()).index(key) == 0:
-                        print(f"  {key}: {value}")
+                output.append(f"{' ' * indent}{{{key}: {value}}}")
+        r_string = '\n'.join(output)
+        if print_dict:print(r_string)
 
-                    # Final key-value pair aligned with indentation
-                    else:
-                        print(f"{' ' * indent}{key}: {value}")
-                else:
-                    print(f"{' ' * indent}{{{key}: {value}}}")
+        return r_string
+
 
     def is_joint_in_skincluster(self, skincluster, joint):
         # Get all joints (influences) associated with the skinCluster
@@ -376,100 +368,6 @@ class Weights:
         # Check if the specified joint is in the list of influences
         return joint in influences
 
-    def get_joint_influenced_points(self, skincluster, joint):
-        # If the joint isn't in the skincluster, return None
-        if not self.is_joint_in_skincluster(skincluster, joint): return None
-
-        # Get all components influenced by the skinCluster
-        geometry = cmds.skinCluster(skincluster, query=True, geometry=True)[0]
-        
-        COMPONENT_TYPE_MAP = {'mesh':'vtx', 'nurbsCurve':'cv', 'nurbsSurface':'cv', 'lattice':'pt'}
-        geo_type = cmds.objectType(geometry)
-        if geo_type not in COMPONENT_TYPE_MAP.keys():
-            print(textwrap.dedent(f'''\# Warning: Unsupported geometry type: {geo_type}.
-            # Please check your use of this function'''))
-            return False
-        component_type = COMPONENT_TYPE_MAP[geo_type]
-        
-        # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
-        cmpnts = cmds.ls(f'{geometry}.{component_type}[*]', flatten=True)
-        # if 
-        if not cmpnts: return
-
-        # Initialize lists for points and weights
-        influenced_pts = []
-        weights = []
-        indices = []
-
-        for cmpnt in cmpnts:
-            if not cmds.objExists(cmpnt): continue  # Skip if the vertex doesn't exist
-            between_bracket = re.search(r'\[(\d+)\]', cmpnt)
-            indices.append((int(between_bracket.group(1))))
-            
-
-            # Get the weight for the specific joint on this vertex
-            weight = cmds.skinPercent(skincluster, cmpnt, transform=joint, query=True)
-            
-            # If there's any weight, store the vertex and weight
-            if weight > 0.0:
-                influenced_pts.append(cmpnt)
-                weights.append(weight)
-
-        # Return the dictionary in the specified format
-        return {'geometry': geometry,
-                'indices': indices,
-                'points': influenced_pts,
-                'weights': weights}
-    # ########################################## Usage example ###########################################
-    # skin_cluster = 'skinCluster10'  # Replace with your skinCluster name
-    # joint = 'RightArm'  # Replace with the joint you are checking
-    # result = get_joint_influenced_points(skin_cluster, joint)
-    # ####################################################################################################
-
-    def get_existing_joint_weight_data(self, joints, mesh_only=True):
-        '''
-        :param str joints: a list of joints to find weight data for
-        :param bool mesh_only: If True skip any geometry that is not a mesh.
-                            Meant to avoid finding weighting in things like lattices, curves, etc.
-
-        :return: A dictionary of data related to weighting:
-        ```
-        # weight data map
-        {
-            joint1:  {'skincluster': {'geometry': geometry,       # dag node
-                                      'indices': indices,         # the point indices, for MfnMesh
-                                      'points': influenced_pts,   # geo.vtx[0], or .cv[0], or .pt[0]
-                                      'weights': weights},         # weight value
-                     'skincluster2': {'geometry': geometry, ...   # and so-on
-            joint2: {...
-        }
-        :rtype: dict
-        '''
-        # mesh_only will check to see if at least one influencing geometries are meshes, if not, skip
-        # mesh_only meant to avoid finding weighting in things like lattices, curves, etc.
-        return_dict = {}
-        all_skinclusters = cmds.ls(type='skinCluster')
-        for joint in joints:
-            influencing_skinclusters = []
-            for skincluster in all_skinclusters:
-                geometry = cmds.skinCluster(skincluster, query=True, geometry=True)[0]
-                if not geometry:continue  # Skip if the skinCluster has no geometry
-                
-                # Skip if 'mesh_only' is set and the geometry is not a mesh
-                if mesh_only and 'mesh' not in cmds.objectType(geometry):continue
-                
-                # Skip if the current joint does not influence this skinCluster
-                if not self.is_joint_in_skincluster(skincluster, joint):continue
-                
-                # Get the points influenced by this joint and their weights
-                point_weights = self.get_joint_influenced_points(skincluster, joint)
-                if not point_weights['points']:continue  # Skip if there are no influenced points/weights
-                # influencing_skinclusters.append(skincluster)
-                # for key in point_weights:
-                #     print(f'{key}: {point_weights[key]}')
-                return_dict[joint] =  {f'{skincluster}': point_weights}
-
-        return return_dict
 
     def sort_by_hier_dist(self, xforms:str, parent_check=True):
         """
@@ -541,7 +439,6 @@ class Weights:
                 children = [c for c in children if c in xforms]
             if parent and children:
                 middle = xform
-        print('middle : ', middle)
 
     def get_xform_as_mpoint(self, object_name:str)->om.MPoint:
         """
@@ -592,6 +489,8 @@ class Weights:
                                 point_vectors:list[om.MVector],
                                 start_point:om.MVector,
                                 end_point:om.MVector,
+                                threshold_start=0.1,
+                                threshold_end=0.1
                                 ) -> tuple[list[int], list[str]]:
         """
         :param list[int] point_indices: List of point names from Maya.    
@@ -601,6 +500,16 @@ class Weights:
         :return: return_points, return_indices
         :rtype: list[int], list[str]
         """
+        if threshold_start:
+            # TODO add functionality to retrieve 'blend' points, points that are near the start
+            # plane but spill out in both directions so you have an area that you know you
+            # need to blend.
+            # vector lerp the start point away from itself using by the amount of threshold start
+            start_point=((end_point - start_point).normalize() * (-1*threshold_start)) + start_point
+            end_point=((start_point - end_point).normalize() * (-1*threshold_end)) + end_point
+
+
+
         # Calculate the direction of the from_plane to the to_plane
         direction = end_point - start_point
         
@@ -934,6 +843,14 @@ class Weights:
     #     if parent and children:
     #         middle = joint
 
+# cmds.file('C:/Users/harri/Documents/cartwheel/working_files/running_jump02.ma',
+#           force=True,
+#           options="v=0;",
+#           ignoreVersion=True,
+#           type="mayaAscii",
+#           open=True)
+
+
 joints = ['jointtg', 'sfd', 'fgbf', 'joint5', 'joint2', 'sgv', 'joint4', 'cv']
 
 
@@ -952,10 +869,11 @@ twist_weights.joints = joints
 up_arm_jnts = ['RightArm','RightArm_out_bind_tw01', 'RightArm_out_bind_tw02', 'RightArm_out_bind_tw03', 'RightArm_out_bind_tw04', 'RightArm_out_bind_tw05', 'RightForeArm']
 lo_arm_jnts = ['RightForeArm', 'RightForeArm_out_bind_tw01', 'RightForeArm_out_bind_tw02', 'RightForeArm_out_bind_tw03', 'RightForeArm_out_bind_tw04', 'RightForeArm_out_bind_tw05', 'RightHand']
 
-twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightForearm',joints=up_arm_jnts)
-twist_weights.distribute_startend_weight(start_joint='RightForearm',end_joint='RightHand',joints=lo_arm_jnts)
+twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightForeArm',joints=up_arm_jnts)
+twist_weights.distribute_startend_weight(start_joint='RightForeArm',end_joint='RightHand',joints=lo_arm_jnts)
 
-
+# Example of using the function
+# Assuming debug_dict is defined in your class
 
 # NOTE: Add a threshold attribute to the points between and another to the mix
 # this simply increases the vector distance by a small amount.
@@ -965,21 +883,3 @@ twist_weights.distribute_startend_weight(start_joint='RightForearm',end_joint='R
 
 # Inherit weights!!!
 # inherit
-
-
-
-# twist_weights.sort_by_hier_dist(joints)
-# twist_weights.distribute_startend_weight(start_joint='RightArm',
-#                                          end_joint='RightForeArm',
-#                                          distribute_joints=[distribute_joints])
-
-
-
-
-# twist_weights.debug_find_points_between(points, do_test_objs=False)
-
-
-
-#twist_weights.debug_project_point_to_plane()
-
-# twist_weights.debug_project_point_to_plane('point_01', 'plane_from', 'plane_from')

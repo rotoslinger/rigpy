@@ -18,7 +18,7 @@ for mod in MODULES:
 # Unique char args
 dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'jsh'
-version = 13
+version = 14
 #########################################################
 
 # If you don't have the directories, this will create them.
@@ -60,12 +60,16 @@ rig_merge.add_vendor_rig()
 
 # 1a. custom scripts
 rig_mods.BDP_outSkel_rigMod()
-# bdp_rig_mods.create_lips_sculpt_jnts()
 
 #--------------------------------------------------------
 
 # 2. BUILDER - Import correctives
 rig_merge.import_correctives()
+
+
+# CUSTOM BLENDSHAPE CREATION because the body blendshape is driving all of the shirt blendshapes
+# we don't have to do a SHAPES build for it. This should become the standard for all clothing 
+# sculpts:
 geo_name='jsh_base_cloth_top_fabric_low_meshShape'
 cmds.blendShape(geo_name, name = 'M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
                 before=True)

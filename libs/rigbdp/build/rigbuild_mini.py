@@ -1,11 +1,12 @@
 import os, importlib, glob
 
 from maya import cmds, mel
-
+from rigbdp.builders.rigmods import rig_mods
 from rigbdp.import_export import sdk_utils, corrective
 from rigbdp.build import post_scripts, vis_rig
 from rigbdp import utils as rig_utils
 
+importlib.reload(rig_mods)
 importlib.reload(sdk_utils)
 importlib.reload(corrective)
 importlib.reload(post_scripts)
@@ -137,8 +138,9 @@ class RigMerge:
         # If build output path given, save file
         cmds.file(rename=self.build_output_path)
 
-        # NOTE: placeholder until we figure out what to do with broken ffds
+        # NOTE: Turn off the ffds for correctives import
         self.__minimo_add_vendor_overs()
+
         cmds.file(save=True, type='mayaAscii')
 
 
@@ -165,11 +167,12 @@ class RigMerge:
         cmds.file(save=True, type='mayaAscii')
         rig_utils.clean_intermediate_nodes()
 
-
         if self.bs_conn_paths:
             for bs_path in self.bs_conn_paths:
                 corrective.reconnect_blendshapes(bs_path)
 
+        # NOTE: Turn on the ffds after correctives import
+        self.__minimo_post_corrective_overs()
 
 
     def import_sdk_data(self):
@@ -202,9 +205,34 @@ class RigMerge:
         if cmds.objExists("preferences.showClothes"):
             cmds.setAttr("preferences.showClothes", 1)
 
+
+    def __minimo_post_corrective_overs(self):
+        if self.nowake_build:return
+
+        cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretch_ffd.envelope', 1)
+        cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretchGlobal_ffd.envelope', 1)
+        if cmds.objExists("preferences.showClothes"):
+            cmds.setAttr("preferences.showClothes", 1)
+
+
     def __nowake_post_corrective_overs(self):
         if self.bs_conn_paths:
             ''
+    
+    def rebuild_clothing_sculpts():
+        # CUSTOM BLENDSHAPE CREATION because the body blendshape is driving all of the shirt blendshapes
+        # we don't have to do a SHAPES build for it. This should become the standard for all clothing 
+        # sculpts:
+        geo_name='jsh_base_cloth_top_fabric_low_meshShape'
+        cmds.blendShape(geo_name, name = 'M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
+                        before=True)
+        cmds.blendShape('M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
+                        edit=True,
+                        ip=r'C:\Users\harri\Documents\BDP\cha\jsh\maya_shapes\shirt.shp')
+
+        # 2a. custom scripts
+        rig_mods.connect_common_blendshapes(char_name='jsh')
+
 
     def __input_file_check(self):
         if not self.input_rig_path:

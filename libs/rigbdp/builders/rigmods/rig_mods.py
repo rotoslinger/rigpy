@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import maya.OpenMaya as om
+
 #import pymel.core as pm
 import math
 
@@ -85,6 +86,13 @@ def BDP_outSkel_rigMod():
         cmds.rename(side + 'arm05Out_jnt1', side + 'armLowOut_jntNull')
         cmds.rename(side + 'hand00Out_jnt1', side + 'handOut_jntNull')
 
+        # point constraint/delete to inherit location (maintain offset off)
+        con1 = cmds.pointConstraint(side + 'fkArmMechanics00_jnt', side + 'ikArmIKMechanics00_jnt', side + 'armUpOut_jntNull', mo=False)
+        con2 = cmds.pointConstraint(side + 'fkArmMechanics01_jnt', side + 'ikArmIKMechanics01_jnt', side + 'armLowOut_jntNull', mo=False)
+        con3 = cmds.pointConstraint(side + 'fkArmMechanics02_jnt', side + 'ikArmIKMechanics02_jnt', side + 'handOut_jntNull', mo=False)
+        cmds.delete(con1, con2, con3)
+
+        # parent constrain with maintain offset on
         cmds.parentConstraint(side + 'fkArmMechanics00_jnt', side + 'ikArmIKMechanics00_jnt', side + 'armUpOut_jntNull', mo=True)
         cmds.parentConstraint(side + 'fkArmMechanics01_jnt', side + 'ikArmIKMechanics01_jnt', side + 'armLowOut_jntNull', mo=True)
         cmds.parentConstraint(side + 'fkArmMechanics02_jnt', side + 'ikArmIKMechanics02_jnt', side + 'handOut_jntNull', mo=True)

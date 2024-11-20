@@ -19,7 +19,7 @@ for mod in MODULES:
 # Unique char args
 dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'teshi'
-version = 13
+version = 14
 #########################################################
 
 # If you don't have the directories, this will create them.

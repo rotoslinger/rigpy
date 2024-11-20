@@ -47,6 +47,10 @@ class Weights:
         dag_path = selection_list.getDependNode(0)
         return dag_path
 
+    def extract_point_indices(self, points):
+        point_indices = [int(re.search(r'\[(\d+)\]', p).group(1)) for p in points]
+        return point_indices
+
     def all_points_in_geom(self, geom):
         geo_type = cmds.objectType(geom)
         if geo_type == 'transform':
@@ -60,7 +64,7 @@ class Weights:
         
         # ex: mesh f'{geometry}.vtx[0]' nurbs f'{geometry}.cv[0]' lattice f'{geometry}.pt[0]' 
         points = cmds.ls(f'{geom}.{component_type}[*]', flatten=True)
-        point_indices = [int(re.search(r'\[(\d+)\]', p).group(1)) for p in points]
+        point_indices = self.extract_point_indices(points)
 
         return points, point_indices
 
@@ -133,7 +137,7 @@ class Weights:
         # if any of the start joint weight is in the end joint weight you need to
         # swap with the end joint
         point_names=[]
-
+        common_points = []
         # find all points to act on.
         skinclusters, geometries = self.get_influence_data([start_joint, end_joint])
         
@@ -142,7 +146,14 @@ class Weights:
             # from the start joint on the end joint (elbow to hand) will need to be moved to the
             # second to last joint in the joints list.
             self.safe_add_influences(joints, skin)
+            tmp_pts = self.point_weight_intersection([start_joint, end_joint], skin)
+            if tmp_pts:
+                self.move_maya_skinweights(skin, geo, tmp_pts, start_joint, joints[-2])
+                common_points += tmp_pts
+            
+
             # self.move_skinweights(skin, geo, start_joint, joints[-2])
+            # point_names+=self.set_pair_weights(joints, geo, skin)
             point_names+=self.set_pair_weights(joints, geo, skin)
 
 
@@ -152,23 +163,146 @@ class Weights:
         # print(cmds.skinCluster('skinCluster8',  query = True, dui = True, selectInfluenceVerts=True))
 
 
-        # TODO: make sure to get a union of any overlapping weights.
-        cmds.select(cl=True)
-        print(cmds.skinCluster('skinCluster9',  edit = True, selectInfluenceVerts='RightForeArm'))
-        points1 = cmds.ls(sl=True, fl=True)
-        cmds.select(cl=True)
-        print(cmds.skinCluster('skinCluster9',  edit = True, selectInfluenceVerts='RightHand'))
-        points2 = cmds.ls(sl=True, fl=True)
-        common_values = list(set(points1) & set(points2))
+        # # TODO: make sure to get a union of any overlapping weights.
+        # cmds.select(cl=True)
+        # cmds.skinCluster('skinCluster9',  edit = True, selectInfluenceVerts='RightForeArm')
+        # points1 = cmds.ls(sl=True, fl=True)
+        # cmds.select(cl=True)
+        # cmds.skinCluster('skinCluster9',  edit = True, selectInfluenceVerts='RightHand')
+        # points2 = cmds.ls(sl=True, fl=True)
+        # common_values = list(set(points1) & set(points2))
         
-        cmds.select(common_values)
+        cmds.select(common_points)
         # print(points)
         # selectInfluenceVerts
 
+    def move_maya_skinweights(self, skinCluster, mesh, points, src_jnt, dst_jnt):
+        mesh_shape = self.get_dag_path(mesh)
+        cpnt_indices = self.extract_point_indices(points)
+        fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+        source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(src_jnt))
+        destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dst_jnt))
+        source_joint = om.MIntArray([source_joint])
+        destination_joint = om.MIntArray([destination_joint])
+
+        # source_joint = self.get_dag_path(source_jnt)
+        # destination_joint = self.get_dag_path(dest_jnt)
+        
+        # cpnt_indices = self.all_points_in_geom(mesh)[1]
+        # print('these are all indices ', cpnt_indices)
+
+        cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+        om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
+        print('This is the component list ', cpnt_list)
+
+
+        if not cpnt_list: return
+
+
+        
+        skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
+
+
+
+        zero_weight_list = [0.0] * len(cpnt_indices)
+        zero_weight_list = om.MDoubleArray(zero_weight_list)
+
+        # cpnt_indices = self.all_points_in_geom(mesh)[1]
+        # source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(src_jnt))
+        # destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dst_jnt))
+
+        fnSkinCluster.setWeights(mesh_shape,
+                                cpnt_list,
+                                source_joint,
+                                zero_weight_list,
+                                normalize=False)
+        fnSkinCluster.setWeights(mesh_shape,
+                                cpnt_list,
+                                destination_joint,
+                                skin_weights,
+                                normalize=True)
+        
 
         # cmds.select(point_names)
+    def unpack_sliced_strings(self, list_with_slices):
+        '''
+        Decompresses a list of Maya indexed component strings into individual components.
+        :param list_with_slices: List of strings in Maya slice format (e.g., 'polygon[0:2]', 'polygon[4]').
+        :return: List of expanded indexed components (e.g., ['polygon[0]', 'polygon[1]', 'polygon[2]', 'polygon[4]']).
+        :rtype: list
+        '''
+        indices = []
+
+        for selection_str in list_with_slices:
+            # Extract the base component name (e.g., "polygon")
+            base = re.match(r'^\D+', selection_str).group(0)
+
+            # Find all slice patterns or single indices
+            matches = re.findall(r'\[(\d+):(\d+)\]|\[(\d+)\]', selection_str)
+
+            for match in matches:
+                if match[0] and match[1]:  # Range match
+                    start, end = int(match[0]), int(match[1])
+                    indices.extend(f'{base}{i}]' for i in range(start, end + 1))  # Include end index
+                elif match[2]:  # Single index match
+                    indices.append(f'{base}{int(match[2])}]')  # Add the single index
+
+        return indices
+
+
+    def point_weight_intersection(self, joints, skinCluster):
+        # returns points and indices of those points that are in all of the joints given.
+        # mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
+
+        fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+        # intersecting_points = {'jnt1': [{'poly.vtx[0]':'0.5'}, {'poly.vtx[1]':'0.5'}],
+        #                        'jnt3': [{'poly.vtx[0]':'0.5'}, {'poly.vtx[4]':'0.5'}]}
+        # print('intersecting points', self.filter_intersecting_points(intersecting_points))
     
-    def decompress_slice_indices(self, list_with_slices):
+
+        all_points = []
+
+        for joint in joints:
+            joint_index= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(joint))
+            # joint_index = om.MIntArray([source_joint])
+            # destination_joint = om.MIntArray([destination_joint])
+
+            # source_joint = self.get_dag_path(source_jnt)
+            # destination_joint = self.get_dag_path(dest_jnt)
+
+            sliced_strings = fnSkinCluster.getPointsAffectedByInfluence(self.get_dag_path(joint))[0]
+            # print(sliced_strings.getDagPath())
+            sliced_strings = list(sliced_strings.getSelectionStrings())
+            all_points.append(self.unpack_sliced_strings(sliced_strings))
+            # sliced_strings_length = sliced_strings.length()
+            # point= sliced_strings.getDagPath(0)
+            # # sliced_strings  = [(sliced_strings.getDagPath(i)) for i in range(sliced_strings_length)]
+            # print('point : ', point)
+            # # print('point : ', weight)
+            # print(len(sliced_strings))
+            # print(len(sliced_strings))
+            # weight_dict = {}
+            # weight_dict = [{key:wt} for key, wt in zip(sliced_strings, wts)]
+            # intersecting_points[joint] = weight_dict
+
+            # maya_list= sel_list
+            # if maya_list and 'Body_geo' in maya_list[0]:
+            #     cmds.select(maya_list)
+            #     print(maya_list)
+            #     return
+        print(skinCluster,': ',  all_points)
+        all_points = list(set(all_points[0]).intersection(*map(set, all_points[1:])))
+
+        print(all_points)
+        return all_points
+
+    def unpack_sliced_indices(self, list_with_slices):
+        '''
+        Decompresses a list of Maya indexed component strings into individual components.
+        :param list_with_slices: List of strings in Maya slice format (e.g., 'polygon[0:2]', 'polygon[4]').
+        :return: List of expanded indexed components (e.g., [0, 1, 2, 4]).
+        :rtype: list
+        '''
         indices = []
 
         # Loop through each selection string in the list
@@ -186,84 +320,47 @@ class Weights:
         return indices
 
 
+
     # def get_points_in(self, skinCluster, mesh, source_jnt, dest_jnt):
     #     mesh_shape = self.get_dag_path(mesh)
+    def filter_intersecting_points(self, data):
+        """
+        Filters a dictionary to keep only the intersecting points across all keys and removes empty lists.
 
+        :param data: A dictionary where the values are lists of dictionaries with 'poly.vtx[n]' keys and weight values.
+        :return: A filtered dictionary containing only intersecting points across all keys.
+        :rtype: dict
+        """
+        # Collect all keys across all joints and store them in a list of sets
+        all_keys = []
+        for values in data.values():
+            joint_keys = set()
+            for d in values:
+                joint_keys.update(d.keys())  # Add all keys from each dictionary
+            all_keys.append(joint_keys)
 
-    # def move_skinweights(self, skinCluster, mesh, source_jnt, dest_jnt):
-    #     # moves skin weights from one bone to another
+        # Now find the intersection of all key sets
+        if not all_keys: return
+        common_keys = set.intersection(*all_keys)  # Intersection across all key sets
 
-    #     mesh_shape = self.get_dag_path(mesh)
-    #     # mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
-    #     fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
-    #     source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
-    #     destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
-    #     source_joint = om.MIntArray([source_joint])
-    #     destination_joint = om.MIntArray([destination_joint])
+        # Filter the original dictionary to retain only common keys
+        filtered_data = {}
+        for joint, values in data.items():
+            filtered_values = [d for d in values if list(d.keys())[0] in common_keys]
 
-    #     # source_joint = self.get_dag_path(source_jnt)
-    #     # destination_joint = self.get_dag_path(dest_jnt)
+            # Only keep the joint if it has non-empty filtered values
+            if filtered_values:
+                filtered_data[joint] = filtered_values
 
-    #     sel_list, weight_list = fnSkinCluster.getPointsAffectedByInfluence(self.get_dag_path(source_jnt))
-    #     # sel_list = sel_list.getSelectionStrings()	
-    #     # om.MSelectionList
-    #     sel_list = list(sel_list.getSelectionStrings())
-    #     maya_list= sel_list
-    #     if maya_list and 'Body_geo' in maya_list[0]:
-    #         cmds.select(maya_list)
-    #         print(maya_list)
-    #         return
-    #     cpnt_indices = self.decompress_slice_indices(sel_list)
-    #     print('these are the specific component, indices ', cpnt_indices)
-        
+        return filtered_data
 
-        
-    #     # cpnt_indices = self.all_points_in_geom(mesh)[1]
-    #     # print('these are all indices ', cpnt_indices)
-
-    #     cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
-    #     om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
-    #     print('This is the component list ', cpnt_list)
-
-
-    #     if not cpnt_list: return
-
-
-        
-    #     skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
-
-
-
-    #     zero_weight_list = [0.0] * len(cpnt_indices)
-    #     zero_weight_list = om.MDoubleArray(zero_weight_list)
-
-    #     # cpnt_indices = self.all_points_in_geom(mesh)[1]
-    #     source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
-    #     destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
-
-    #     for idx in cpnt_indices:
-
-    #         cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
-    #         om.MFnSingleIndexedComponent(cpnt_list).addElement(idx)
-    #         weight_val = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
-    #         fnSkinCluster.setWeights(mesh_shape,
-    #                                 cpnt_list,
-    #                                 source_joint,
-    #                                 0.0,
-    #                                 normalize=False)
-    #         fnSkinCluster.setWeights(mesh_shape,
-    #                                 cpnt_list,
-    #                                 destination_joint,
-    #                                 1.0,
-    #                                 normalize=False)
-        
 
 
     def move_skinweights(self, skinCluster, mesh, source_jnt, dest_jnt):
         # moves skin weights from one bone to another
 
         mesh_shape = self.get_dag_path(mesh)
-        mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
+        # mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
         fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
         source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
         destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
@@ -273,20 +370,26 @@ class Weights:
         # source_joint = self.get_dag_path(source_jnt)
         # destination_joint = self.get_dag_path(dest_jnt)
 
-        sel_list, weight_list = fnSkinCluster.getPointsAffectedByInfluence(self.get_dag_path(dest_jnt))
+        sel_list, weight_list = fnSkinCluster.getPointsAffectedByInfluence(self.get_dag_path(source_jnt))
         # sel_list = sel_list.getSelectionStrings()	
         # om.MSelectionList
         sel_list = list(sel_list.getSelectionStrings())
-        cpnt_indices = self.decompress_slice_indices(sel_list)
+        maya_list= sel_list
+        if maya_list and 'Body_geo' in maya_list[0]:
+            cmds.select(maya_list)
+            print(maya_list)
+            return
+        cpnt_indices = self.unpack_sliced_indices(sel_list)
         print('these are the specific component, indices ', cpnt_indices)
         
 
-
-        cpnt_indices = self.all_points_in_geom(mesh)[1]
-        print('these are all indices ', cpnt_indices)
+        
+        # cpnt_indices = self.all_points_in_geom(mesh)[1]
+        # print('these are all indices ', cpnt_indices)
 
         cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
         om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
+        print('This is the component list ', cpnt_list)
 
 
         if not cpnt_list: return
@@ -301,18 +404,81 @@ class Weights:
         zero_weight_list = om.MDoubleArray(zero_weight_list)
 
         # cpnt_indices = self.all_points_in_geom(mesh)[1]
+        source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
+        destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
+
+        for idx in cpnt_indices:
+
+            cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+            om.MFnSingleIndexedComponent(cpnt_list).addElement(idx)
+            weight_val = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
+            fnSkinCluster.setWeights(mesh_shape,
+                                    cpnt_list,
+                                    source_joint,
+                                    0.0,
+                                    normalize=False)
+            fnSkinCluster.setWeights(mesh_shape,
+                                    cpnt_list,
+                                    destination_joint,
+                                    1.0,
+                                    normalize=False)
+        
 
 
-        fnSkinCluster.setWeights(mesh_shape,
-                                 cpnt_list,
-                                 source_joint,
-                                 zero_weight_list,
-                                 normalize=True)
-        fnSkinCluster.setWeights(mesh_shape,
-                                 cpnt_list,
-                                 destination_joint,
-                                 skin_weights,
-                                 normalize=True)
+    # def move_skinweights(self, skinCluster, mesh, source_jnt, dest_jnt):
+    #     # moves skin weights from one bone to another
+
+    #     mesh_shape = self.get_dag_path(mesh)
+    #     mfn_mesh = om.MFnMesh(self.get_dag_path(mesh))
+    #     fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+    #     source_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(source_jnt))
+    #     destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dest_jnt))
+    #     source_joint = om.MIntArray([source_joint])
+    #     destination_joint = om.MIntArray([destination_joint])
+
+    #     # source_joint = self.get_dag_path(source_jnt)
+    #     # destination_joint = self.get_dag_path(dest_jnt)
+
+    #     sel_list, weight_list = fnSkinCluster.getPointsAffectedByInfluence(self.get_dag_path(dest_jnt))
+    #     # sel_list = sel_list.getSelectionStrings()	
+    #     # om.MSelectionList
+    #     sel_list = list(sel_list.getSelectionStrings())
+    #     cpnt_indices = self.decompress_slice_indices(sel_list)
+    #     print('these are the specific component, indices ', cpnt_indices)
+        
+
+
+    #     cpnt_indices = self.all_points_in_geom(mesh)[1]
+    #     print('these are all indices ', cpnt_indices)
+
+    #     cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+    #     om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
+
+
+    #     if not cpnt_list: return
+
+
+        
+    #     skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
+
+
+
+    #     zero_weight_list = [0.0] * len(cpnt_indices)
+    #     zero_weight_list = om.MDoubleArray(zero_weight_list)
+
+    #     # cpnt_indices = self.all_points_in_geom(mesh)[1]
+
+
+    #     fnSkinCluster.setWeights(mesh_shape,
+    #                              cpnt_list,
+    #                              source_joint,
+    #                              zero_weight_list,
+    #                              normalize=True)
+    #     fnSkinCluster.setWeights(mesh_shape,
+    #                              cpnt_list,
+    #                              destination_joint,
+    #                              skin_weights,
+    #                              normalize=True)
         # * shape       (MDagPath) - object being deformed by the skinCluster
         # * components   (MObject) - the components to set weights on
         # * influence        (int) - physical index of a single influence object
@@ -869,7 +1035,7 @@ twist_weights.joints = joints
 up_arm_jnts = ['RightArm','RightArm_out_bind_tw01', 'RightArm_out_bind_tw02', 'RightArm_out_bind_tw03', 'RightArm_out_bind_tw04', 'RightArm_out_bind_tw05', 'RightForeArm']
 lo_arm_jnts = ['RightForeArm', 'RightForeArm_out_bind_tw01', 'RightForeArm_out_bind_tw02', 'RightForeArm_out_bind_tw03', 'RightForeArm_out_bind_tw04', 'RightForeArm_out_bind_tw05', 'RightHand']
 
-twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightForeArm',joints=up_arm_jnts)
+# twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightForeArm',joints=up_arm_jnts)
 twist_weights.distribute_startend_weight(start_joint='RightForeArm',end_joint='RightHand',joints=lo_arm_jnts)
 
 # Example of using the function

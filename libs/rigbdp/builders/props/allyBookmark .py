@@ -1,43 +1,42 @@
 from importlib import reload
-from rigbdp.build import rig_hier
+from rigbdp.build.components import rig_hier
 from rig.propcmds import stdavars
 from rig.propcmds.OLD_components import prop_singleton
 from rig_2.tag import utils as tag_utils
-from rig.propcmds import prop_base
+from rigbdp.build.components import prop_base
+from rigbdp.build import prop
 
-MODULES = [prop_base, rig_hier, stdavars, prop_singleton, tag_utils]
+MODULES = [prop_base, rig_hier, stdavars, prop_singleton, tag_utils, prop]
 for mod in MODULES:
     reload(mod)
 
+class AllyBookmark(prop.PropBuild):
+    def __init__(self,
+                 name='allyBookmark',
+                 version=1,
+                 props_path=r'C:\Users\harri\Documents\BDP\props',
+                 model_file='allyBookmark_base_model_h_v004.mb',
+                 rig_geo_file='',
+                 build_output_path='',
+                 *args, **kwargs):
+        # Call the parent class constructor
+        super().__init__(*args, **kwargs)
 
-def create_std_rig(name = "allyBookmark"):
-    rig_root = rig_hier.create_rig_hier(name=name, 
-                                        model_path=r'C:\Users\harri\Documents\BDP\props\allyBook\subDocu_base_model_h_v001.mb'
-                                        )
-    std_avars = stdavars.create_stdavar_ctrl(side = "C",
-                                            skel_parent = rig_root.skeleton_grp,
-                                            rig_parent = rig_root.rig_grp,
-                                            ctrl_sizes = [12,((12)*.9),((11)*.9)],
-                                            colors = [ 
-                                                        (.8, 0, 0.0),
-                                                        (0.4, 0, 0.0),
-                                                        (0.4, 0, 0.0)],
-                                            ty_offsets = [0,0,0],
-                                            ctrl_names = ["World", "Layout", "Root"],
-                                            ctrls_with_bones = [False, False, True],
-                                            create_buffer_shape = True,
-                                            debug = True)
-    child_001 = prop_base.simple_component(side = "",
-                                            parent_hook = std_avars.root_ctrl,
-                                            skel_parent = rig_root.skeleton_grp,
-                                            rig_parent = rig_root.rig_grp,
-                                            ctrl_sizes = [8],
-                                            colors = [(1, 1, 0.0)],
-                                            ty_offsets = [0,0,0],
-                                            ctrl_names = ["bend01", "bend02", "bend03"],
-                                            create_joints = True,
-                                            create_buffer_shape = True,
+    def build_it(self):
+        l_page = prop_base.simple_component(side = 'C',
+                                        parent_hook = self.std_avars.root_ctrl,
+                                        rig_parent = self.rig_root.rig_grp,
+                                        ctrl_sizes = [1, 1, 1],
+                                        colors = [(1, 1, 0),(0, 1, 0)],
+                                        ctrl_names = ['L_Page',
+                                                      'L_Mountain',
+                                                      'R_Mountain',
+                                                      'R_Tree00',
+                                                      'R_Tree01'],
+                                        associated_geos=[[], 
+                                                         ],
+                                        chained_pos_offset=(0, 0 ,0),
+                                        debug = True)
+        counter = 1 
+prop_rig = AllyBookmark()
 
-                                            debug = True)
-
-create_std_rig()

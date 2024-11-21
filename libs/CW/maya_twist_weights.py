@@ -96,7 +96,65 @@ class Weights:
         return list(all_points), list(all_indices)
 
 
-    def set_pair_weights(self, joints, geom, skincluster, use_existing_wts=False):
+    def mix_values_between(self, point_vectors, start_point, end_point,
+                           # If given get the difference (from_inherit_wts-to_wts)
+                           start_inherit_wts: bool | list[float]=False,
+                           # If given get the difference (to_inherit_wts-from_wts)
+                           end_inherit_wts: bool | list[float]=False, 
+                           decimal_place: int | bool=5):
+        
+        # We don't want to ever inherit both start and end.
+        # Trying to do this could mess up weight normalization which we won't want to do by accident
+        if start_inherit_wts and end_inherit_wts: return
+        start_weights=[]
+        end_weights=[]
+
+        total_length = (start_point-end_point).length()
+
+        plane_srt_center = start_point
+        plane_srt_normal = end_point - start_point
+        plane_srt_normal.normalize()
+
+        for point in point_vectors:
+            proj_p_srt = self.project_point_to_plane(point, plane_srt_center, plane_srt_normal)[0]
+            # possible TODO
+            # should we worry about dividing by 0, or rounding the weight values?
+            # cmds.skinPercent(weights, pruneWeights=0.0001) could be fine to handle rounding...
+            srt_pnt_length = (point-proj_p_srt).length()
+            start_weights.append(srt_pnt_length/total_length)
+
+        end_weights = []
+        # Normalize by getting the inverse start_weights
+        end_weights = [1-wt for wt in start_weights]
+
+        if start_inherit_wts:
+            start_weights = [(vec_wt * inh_wt) for vec_wt, inh_wt in zip(start_weights,
+                                                                         start_inherit_wts)]
+            end_weights = [1-wt for wt in start_weights]
+
+
+            # # Normalize by getting the inverse start_weights
+            # end_weights = [(swt-ewt) for swt, ewt in zip(start_weights, end_weights)]
+        elif end_inherit_wts:
+            # Normalize by getting the inverse start_weights
+            end_weights = [1-wt for wt in start_weights]
+            end_weights = [(vec_wt * inh_wt) for vec_wt, inh_wt in zip(end_weights,
+                                                                       end_inherit_wts)]
+            # do a reverse normalization on the start weights
+            start_weights = [1 -wt for wt in end_weights]
+
+
+        if decimal_place and type(decimal_place) == int :
+            # points can drift when world movement is 5 or more figures.
+            # rounding, in combination with maya.cmds.skinWeights flags pruneWeights & normalize
+            # can help to avoid these issues.
+            start_weights = [round(sw, decimal_place) for sw in start_weights]
+            end_weights = [round(ew, decimal_place) for ew in end_weights]
+
+        return start_weights, end_weights
+
+    def set_pair_weights(self, joints, geom, skincluster,
+                         use_existing_wts=False, inherit_start=True, inherit_end=True):
         # TODO: implement a 'gather weights' method which focuses only on the points that
         # have already been weighted by any of the joints in the joints arg.
         # If existing_weights is True, will only act upon those points
@@ -118,9 +176,10 @@ class Weights:
                                                                     start_plane,
                                                                     end_plane)
         r_point_names = [f'{geom}.vtx[{idx}]' for idx in point_indices]
-        # TODO: get weights of start and end joints.
-        start_wts = self.get_joint_weights(skincluster, geom, joints[0])
-        end_wts = self.get_joint_weights(skincluster, geom, joints[-1])
+
+        # Get the weight of the joint for every point in the mesh
+        start_wts = self.get_joint_allweights(skincluster, geom, joints[0])
+        end_wts = self.get_joint_allweights(skincluster, geom, joints[-1])
 
         print('start_wts : ', start_wts)
         print('end_wts : ', end_wts)
@@ -129,13 +188,26 @@ class Weights:
             jnt_start, jnt_end = pair
             joint_start = self.get_xform_as_mvector(jnt_start)
             joint_end = self.get_xform_as_mvector(jnt_end)
+            start_inherit_wts=False
+            end_inherit_wts=False
             indices, p_vectors = self.points_between_startend(point_indices,
-                                                                        point_vectors,
-                                                                        joint_start,
-                                                                        joint_end)
+                                                              point_vectors,
+                                                              joint_start,
+                                                              joint_end)
+            if inherit_start and idx == 0:
+                start_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom, 
+                                                                 joints[0], indices)
+
+
+            if inherit_end and idx == len(pairs)-1:
+                end_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom,
+                                                               joints[-1], indices)
+
+            print('start_inherit_wts ', start_inherit_wts)
+            print('end_inherit_wts ', end_inherit_wts)
             wt_start, wt_end = self.mix_values_between(p_vectors, joint_start, joint_end,
-                                                       start_inherit_wts=False,
-                                                       end_inherit_wts=False,
+                                                       start_inherit_wts=start_inherit_wts,
+                                                       end_inherit_wts=end_inherit_wts,
                                                        decimal_place=False
                                                        )
             point_names = [f'{geom}.vtx[{idx}]' for idx in indices]
@@ -191,8 +263,82 @@ class Weights:
         return points, indices
 
     def get_joint_weights(self, skinCluster, mesh, joint):
+        # Returns a sparse list of weights (only includes points that have a non-zero weight)
+        # This makes per point lookups unsafe because indexing will not be properly ordered.
+        # For a complete list of all indices, see method 'get_joint_allweights' below.
+
         # Turn the point list into an integer list, then convert it to type kMeshVertComponent 
         cpnt_indices = self.get_influenced_points(skinCluster, joint)[1]
+        cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+        om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
+        # if for some reason the list isn't created, or fails, you won't want to move forward.
+        if not cpnt_list: return
+
+        # convert all maya data into OpenMaya data
+        mesh_shape = self.get_dag_path(mesh)
+        fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+        joint_index= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(joint))
+        # joint_index = om.MIntArray([joint_index])
+    
+        # get weights, set back an empty weight list for the weights that will be moved
+        skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, joint_index)
+        skin_weights = list(skin_weights)
+        return skin_weights
+
+    def get_joint_weight_by_idx(self, skinCluster, mesh, joint, indices):
+        # the list returned by this method contains a weight value for every vertex in the mesh.
+        # the result is a list that is safe for 'wildcard-type' point index lookups.
+
+        # Convert list of integers it to type kMeshVertComponent 
+        cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+        om.MFnSingleIndexedComponent(cpnt_list).addElements(indices)
+        # if for some reason the list isn't created, or fails, you won't want to move forward.
+        if not cpnt_list: return
+
+        # convert all maya data into OpenMaya data
+        mesh_shape = self.get_dag_path(mesh)
+        fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+        joint_index= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(joint))
+        # joint_index = om.MIntArray([joint_index])
+    
+        # get weights, set back an empty weight list for the weights that will be moved
+        skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, joint_index)
+        skin_weights = list(skin_weights)
+        return skin_weights
+
+
+    def get_joint_allweights(self, skinCluster, mesh, joint):
+        # the list returned by this method contains a weight value for every vertex in the mesh.
+        # the result is a list that is safe for 'wildcard-type' point index lookups.
+
+        # Push back a sequential list of integers the same amount as the vertex count 
+        cpnt_indices = [i for i in range(cmds.polyEvaluate(mesh, vertex=True))]
+        # Convert list of integers it to type kMeshVertComponent 
+        cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
+        om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
+        # if for some reason the list isn't created, or fails, you won't want to move forward.
+        if not cpnt_list: return
+
+        # convert all maya data into OpenMaya data
+        mesh_shape = self.get_dag_path(mesh)
+        fnSkinCluster = omAnim.MFnSkinCluster(self.get_dependency_node(skinCluster))
+        joint_index= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(joint))
+        # joint_index = om.MIntArray([joint_index])
+    
+        # get weights, set back an empty weight list for the weights that will be moved
+        skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, joint_index)
+        skin_weights = list(skin_weights)
+        return skin_weights
+
+
+
+    def get_joint_allweights(self, skinCluster, mesh, joint):
+        # the list returned by this method contains a weight value for every vertex in the mesh.
+        # the result is a list that is safe for 'wildcard-type' point index lookups.
+
+        # Push back a sequential list of integers the same amount as the vertex count 
+        cpnt_indices = [i for i in range(cmds.polyEvaluate(mesh, vertex=True))]
+        # Convert list of integers it to type kMeshVertComponent 
         cpnt_list = om.MFnSingleIndexedComponent().create(om.MFn.kMeshVertComponent)
         om.MFnSingleIndexedComponent(cpnt_list).addElements(cpnt_indices)
         # if for some reason the list isn't created, or fails, you won't want to move forward.
@@ -225,7 +371,6 @@ class Weights:
         destination_joint= fnSkinCluster.indexForInfluenceObject(self.get_dag_path(dst_jnt))
         source_joint = om.MIntArray([source_joint])
         destination_joint = om.MIntArray([destination_joint])
-
         
         # get weights, set back an empty weight list for the weights that will be moved
         skin_weights = fnSkinCluster.getWeights(mesh_shape, cpnt_list, source_joint)
@@ -246,7 +391,6 @@ class Weights:
                                 destination_joint,
                                 skin_weights,
                                 normalize=True)
-        
 
         # cmds.select(point_names)
 
@@ -487,8 +631,6 @@ class Weights:
             start_point=((end_point - start_point).normalize() * (-1*threshold_start)) + start_point
             end_point=((start_point - end_point).normalize() * (-1*threshold_end)) + end_point
 
-
-
         # Calculate the direction of the from_plane to the to_plane
         direction = end_point - start_point
         
@@ -521,7 +663,8 @@ class Weights:
 
             # if the point is between, both of the dot products will either 1.0 or .9999
             # if either are below 0 they are not between
-            # if they are 0 they are on a plane, technically not between, but we will treat them as such
+            # if they are 0 they are on a plane, technically not between, but we will treat
+            # them as such
             if dot_product_start >= 0 and dot_product_end >= 0:
                 return_indices.append(idx)
                 return_point_vectors.append(point)
@@ -534,42 +677,6 @@ class Weights:
         # Send it back to maya.cmd form
         # maya_point_objects = [f'{maya_object}.{component_type}[{idx}]' for idx in return_indices]
         return return_indices, return_point_vectors
-
-    def mix_values_between(self, point_vectors, start_point, end_point,
-                           # If given get the difference (from_inherit_wts-to_wts)
-                           start_inherit_wts: bool | list[float]=False,
-                           # If given get the difference (to_inherit_wts-from_wts)
-                           end_inherit_wts: bool | list[float]=False, 
-                           decimal_place: int | bool=5):
-        start_weights=[]
-        end_weights=[]
-
-        total_length = (start_point-end_point).length()
-
-
-        plane_srt_center = start_point
-        plane_srt_normal = end_point - start_point
-        plane_srt_normal.normalize()
-
-
-        for point in point_vectors:
-            proj_p_srt = self.project_point_to_plane(point, plane_srt_center, plane_srt_normal)[0]
-            # possible TODO
-            # should we worry about dividing by 0, or rounding the weight values?
-            # cmds.skinPercent(weights, pruneWeights=0.0001) could be fine to handle rounding...
-            srt_pnt_length = (point-proj_p_srt).length()
-            start_weights.append(srt_pnt_length/total_length)
-
-        end_weights = [1-wt for wt in start_weights]
-
-        if decimal_place and type(decimal_place) == int :
-            # points can drift when world movement is 5 or more figures.
-            # rounding, in combination with maya.cmds.skinWeights flags pruneWeights & normalize
-            # can help to avoid these issues.
-            start_weights = [round(sw, decimal_place) for sw in start_weights]
-            end_weights = [round(ew, decimal_place) for ew in end_weights]
-
-        return start_weights, end_weights
 
 
     def debug_project_point_to_plane(self, obj_to_project, start_obj, end_obj):
@@ -822,12 +929,24 @@ class Weights:
     #     if parent and children:
     #         middle = joint
 
+
+# from maya import mel
+# mel.eval('file -f -options "v=0;"  -ignoreVersion  -typ "mayaAscii" -o "C:/Users/harri/Documents/cartwheel/working_files/running_jump02.ma";addRecentFile("C:/Users/harri/Documents/cartwheel/working_files/running_jump02.ma", "mayaAscii");')
+
 # cmds.file('C:/Users/harri/Documents/cartwheel/working_files/running_jump02.ma',
 #           force=True,
 #           options="v=0;",
 #           ignoreVersion=True,
 #           type="mayaAscii",
 #           open=True)
+# time.sleep(1)
+cmds.select(cl=True)
+cmds.deformerWeights('skinCluster8.xml', im = True, method = "index", deformer='skinCluster8', path = r'C:\Users\harri\Documents\cartwheel\working_files')
+cmds.deformerWeights('skinCluster9.xml', im = True, method = "index", deformer='skinCluster9', path = r'C:\Users\harri\Documents\cartwheel\working_files')
+
+cmds.skinPercent('skinCluster8', 'Coat_geo', normalize = True)
+cmds.skinPercent('skinCluster9', 'Body_geo', normalize = True)
+
 
 
 joints = ['jointtg', 'sfd', 'fgbf', 'joint5', 'joint2', 'sgv', 'joint4', 'cv']

@@ -1,7 +1,7 @@
 import math
 from importlib import reload
 from rig_2.tag import utils as tag_utils
-from rigbdp.build import misc
+from rigbdp.build.components import misc
 from maya import cmds, mel
 
 MODULES = [tag_utils, misc,]

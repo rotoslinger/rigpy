@@ -1299,7 +1299,9 @@ class create_rivet_rig():
 
     def __cleanup(self):
         if self.debug == False:
-            suffix_constraints()
+            # TODO: find out what suffix_constraints is and does, it used to be in this file but is 
+            # now missing....
+            #suffix_constraints()
             misc.lock_all(hierarchy = self.rig_parent, filter = ["*"+ self.suffix, "*_JNT"])
             misc.lock_all(hierarchy = self.skel_parent, filter = ["*" + self.suffix, "*_JNT","*_EX"])
 

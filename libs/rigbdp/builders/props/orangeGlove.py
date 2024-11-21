@@ -1,11 +1,12 @@
 from importlib import reload
-from rigbdp.build import rig_hier
+from rigbdp.build.components import rig_hier
 from rig.propcmds import stdavars
 from rig.propcmds.OLD_components import prop_singleton
 from rig_2.tag import utils as tag_utils
-from rig.propcmds import prop_base
+from rigbdp.build.components import prop_base
+from rigbdp.build import prop
 
-MODULES = [prop_base, rig_hier, stdavars, prop_singleton, tag_utils]
+MODULES = [prop_base, rig_hier, stdavars, prop_singleton, tag_utils, prop]
 for mod in MODULES:
     reload(mod)
 

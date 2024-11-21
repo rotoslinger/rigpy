@@ -1,4 +1,4 @@
-import sys
+import sys, math
 import importlib
 from maya import cmds
 from rig.utils import misc
@@ -35,6 +35,7 @@ class create_stdavar_ctrl():
                  ty_offsets = [0,0,0],
                  #create_bone = False,
                  ctrl_names = ["World", "Layout", "Root"],
+                 associated_geos = ['','',''],
                  ctrls_with_bones = [False, False, True],
                  create_buffer_shape = True,
                  debug = False,
@@ -74,6 +75,7 @@ class create_stdavar_ctrl():
         self.colors                 = colors
         #self.create_bone           = create_bone
         self.ctrls_with_bones       = ctrls_with_bones
+        self.associated_geos         = associated_geos
         self.ctrl_names             = ctrl_names
         self.world_ctrl = ""
         self.layout_ctrl = ""
@@ -83,7 +85,48 @@ class create_stdavar_ctrl():
         self.ctrl_buffers           = []
         self.ctrl_gimbals           = []
         self.mdlsiz_attr            = []
+
         self.__create()
+
+        self.__finalize_associate_geos()
+
+    def __create(self):
+        self.__check()
+        self.__create_parents()
+        self.__create_ctrls()
+        self.__create_mdlsiz()
+        self.__cleanup()
+
+    def __finalize_associate_geos(self):
+        '''
+        Looks for associated geometry, gets bounding box information and finds and sets
+        self.ctrl_sizes and self.default_positions, based on this information.
+        '''
+        # self.default_sizes = [1] * len(self.ctrl_names)
+        # self.default_locations = [[0, 0, 0]] * len(self.ctrl_names)
+        # print('DEFAULT LOCATIONS: ', self.default_locations)
+        # print('DEFAULT SIZES: ', self.default_sizes)
+        print(self.associated_geos)
+        if not self.associated_geos: return
+
+        for idx, name in enumerate(self.ctrl_names):
+            if idx > (len(self.associated_geos) -1) or not self.associated_geos[idx]: continue
+            print("THIS IS HAPPENING ")
+            bbox = cmds.exactWorldBoundingBox(self.associated_geos[idx])
+            min_x, min_y, min_z, max_x, max_y, max_z = bbox
+
+            # Calculate the dimensions of the bounding box
+            width = max_x - min_x
+            height = max_y - min_y
+            depth = max_z - min_z
+
+            # Calculate the center of the bounding box
+            center_x = (min_x + max_x) * 0.5
+            center_y = (min_y + max_y) * 0.5
+            center_z = (min_z + max_z) * 0.5
+            radius = math.sqrt((width * 0.5)**2 + (height * 0.5)**2 + (depth * 0.5)**2)
+            cmds.setAttr(self.buffer_size_attrs[idx], radius)
+            cmds.xform(self.ctrl_buffers[idx], worldSpace=True, translation=[center_x, center_y, center_z])
 
     def __check(self):
         for i in [self.skel_parent, self.rig_parent]:
@@ -98,6 +141,7 @@ class create_stdavar_ctrl():
     def __create_ctrls(self):
         """ create ctrls """
         self.root_joint = ""
+        self.buffer_size_attrs=[]
         create_buffer_shape = [False, False, True]
         for index in range(len(self.ctrl_names)):
             if index == 0 & self.debug != 1:
@@ -119,9 +163,11 @@ class create_stdavar_ctrl():
                                                 color = self.colors[index],
                                                 offset = [0,self.ty_offsets[index],0],
                                                 orient = [0,0,90],
-                                                create_buffer_shape=create_buffer_shape[index],
+                                                create_buffer_shape=True,
                                                 create_joint = self.ctrls_with_bones[index],
                                                 )
+            print('CREATING BUFFER SIZE ATTRS')
+            self.buffer_size_attrs.append(return_ctrl.shape_size_attr)
             self.ctrls.append(return_ctrl.ctl)
             self.ctrl_buffers.append(return_ctrl.buffers)
             if return_ctrl.joint:
@@ -157,9 +203,3 @@ class create_stdavar_ctrl():
             misc.lock_all(hierarchy = self.rig_parent, filter = ["*_CTL"])
             misc.lock_all(hierarchy = self.skel_parent, filter = ["*_CTL"])
 
-    def __create(self):
-        self.__check()
-        self.__create_parents()
-        self.__create_ctrls()
-        self.__create_mdlsiz()
-        self.__cleanup()

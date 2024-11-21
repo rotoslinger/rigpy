@@ -3,7 +3,7 @@ from importlib import reload
 
 from maya import cmds, mel
 
-from rigbdp.build import rig_hier
+from rigbdp.build.components import rig_hier
 from rig.propcmds import stdavars
 from rig.propcmds.OLD_components import prop_singleton
 from rig_2.tag import utils as tag_utils
@@ -35,13 +35,15 @@ class PropWeights:
 
 class PropBuild(object):
     def __init__(self,
-                 name='allyBook',
-                 version=1,
-                 props_path=r'C:\Users\harri\Documents\BDP\props',
-                 model_file='allyBook_base_model_h_v004.mb',
-                 rig_geo_files='',
-                 output_path='',
-                 radius=None,
+                 name,
+                 version,
+                 props_path,
+                 model_file,
+                 rig_geo_files,
+                 output_path,
+                 radius,
+                 root_geometry='',
+                 *args, **kwargs
                  ):
         self.name = name
         self.props_path = props_path
@@ -49,6 +51,7 @@ class PropBuild(object):
         self.rig_geo_file = rig_geo_files
         self.version = version
         self.radius = radius
+        self.root_geometry = root_geometry
         sep = os.path.sep
         self.full_model_path = os.path.normpath(f'{props_path}{sep}{name}{sep}{model_file}')
         if rig_geo_files:
@@ -57,9 +60,7 @@ class PropBuild(object):
             self.out_file=f'{self.name}_base_rig_h_v{version:03}'
             self.output_path = os.path.normpath(f'{props_path}{sep}{name}{sep}{self.out_file}')
 
-        self.__create()
-
-    def __create(self):
+    def create(self):
         self.__create_std_root()
         self.build_it()
         if self.output_path:
@@ -86,6 +87,7 @@ class PropBuild(object):
                                                             (0.4, 0, 0.0),
                                                             (0.4, 0, 0.0)],
                                                 ctrl_names = ["World", "Layout", "Root"],
+                                                associated_geos = ['','', self.root_geometry],
                                                 ctrls_with_bones = [False, False, True],
                                                 create_buffer_shape = True,
                                                 debug = True)
@@ -93,6 +95,15 @@ class PropBuild(object):
     def build_it(self):
         ...
 
+    def remove_unknown_plugins(self):
+       mel.eval('''
+                string $plugin;
+                string $unknownPlugins[] = `unknownPlugin -query -list`;
+                for ($plugin in $unknownPlugins)
+                {
+                unknownPlugin -remove $plugin;
+                };''')
+        
     def get_scene_bounds(self):
 
         # mel.eval("cleanUpScene 3")
@@ -148,4 +159,3 @@ class AllyBook(PropBuild):
         print('I AM BUILDING')
 
 
-prop_build = AllyBook()

@@ -11,8 +11,8 @@ for mod in MODULES:
 
 def create_std_rig(name = "subDocu_base_rig_h_v001"):
     rig_root = rig_hier.create_rig_hier(name=name, 
-                                        model_filepath=r'C:\Users\harri\Documents\BDP\props\subDocu\subDocu_base_model_h_v001.mb',
-                                        rig_geo_filepaths=[r'C:\Users\harri\Documents\BDP\props\subDocu\hose_patch.mb'])
+                                        model_path=r'C:\Users\harri\Documents\BDP\props\subDocu\subDocu_base_model_h_v001.mb',
+                                        rig_geo_path=[r'C:\Users\harri\Documents\BDP\props\subDocu\hose_patch.mb'])
     std_avars = stdavars.create_stdavar_ctrl(side = "C",
                                             skel_parent = rig_root.skeleton_grp,
                                             rig_parent = rig_root.rig_grp,

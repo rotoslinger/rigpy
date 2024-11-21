@@ -1,16 +1,18 @@
 from importlib import reload
-from rigbdp.build.rig_hier import create_rig_hier
+from rigbdp.build import rig_hier
 from rig.propcmds import stdavars
 from rig.propcmds.OLD_components import prop_singleton
 from rig_2.tag import utils as tag_utils
 from rig.propcmds import prop_base
 
-MODULES = [prop_base, create_rig_hier, stdavars, prop_singleton, tag_utils]
+MODULES = [prop_base, rig_hier, stdavars, prop_singleton, tag_utils]
 for mod in MODULES:
     reload(mod)
 
-def create_std_rig(name = "louisaBed"):
-    rig_root = create_rig_hier(name=name)
+def create_std_rig(name = "louisaBed_base_model_h"):
+    rig_root = rig_hier.create_rig_hier(name=name, 
+                                        model_path=r'C:\Users\harri\Documents\BDP\props\louisaBed\louisaBed_base_model_h_v003.mb'
+                                        )
     std_avars = stdavars.create_stdavar_ctrl(side = "C",
                                             skel_parent = rig_root.skeleton_grp,
                                             rig_parent = rig_root.rig_grp,

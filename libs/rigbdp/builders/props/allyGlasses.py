@@ -1,17 +1,19 @@
-import importlib
-from rig.utils import misc
+from importlib import reload
+from rigbdp.build import rig_hier
 from rig.propcmds import stdavars
 from rig.propcmds.OLD_components import prop_singleton
 from rig_2.tag import utils as tag_utils
 from rig.propcmds import prop_base
-importlib.reload(prop_base)
-importlib.reload(misc)
-importlib.reload(stdavars)
-importlib.reload(prop_singleton)
-importlib.reload(tag_utils)
 
-def create_std_rig(name = "allyGlasses"):
-    rig_root = misc.create_rig_hier(name=name)
+MODULES = [prop_base, rig_hier, stdavars, prop_singleton, tag_utils]
+for mod in MODULES:
+    reload(mod)
+
+
+def create_std_rig(name = "allyGlasses_base_model_h"):
+    rig_root = rig_hier.create_rig_hier(name=name, 
+                                        model_path=r'C:\Users\harri\Documents\BDP\props\allyGlasses\allyGlasses_base_model_h_v002.mb'
+                                        )
     std_avars = stdavars.create_stdavar_ctrl(side = "C",
                                             skel_parent = rig_root.skeleton_grp,
                                             rig_parent = rig_root.rig_grp,

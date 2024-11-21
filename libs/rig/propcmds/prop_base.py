@@ -28,10 +28,12 @@ class simple_component():
                  rig_parent = "C_rig_GRP",
                  ctrl_parent = "C_control_GRP",
                  ctrl_sizes = [1.0, 1.0, 1.0],
+                 default_positions = [],
                  colors = None,  # [(1,1,0), (1,1,0), (1,1,0)]
                 #  ty_offsets = [0,0,0] # just an offset in ty.
                  #create_bone = False,
                  ctrl_names = ["ControlA"], # ["ControlA", "ControlB", "ControlC"]
+                 associated_geos=[],
                  create_joints = True,
                  chained_pos_offset= (0,1,0), # by default this is going to increase in Y
                  root_pos_offset= (1,0,0), # this moves the root to an offset location
@@ -111,6 +113,7 @@ class simple_component():
         self.rig_parent             = rig_parent
         self.ctrl_parent            = ctrl_parent
         self.ctrl_sizes             = ctrl_sizes
+        self.default_positions      = default_positions
         self.chained_pos_offset     = chained_pos_offset
         self.root_pos_offset        = root_pos_offset
         self.create_buffer_shape    = create_buffer_shape
@@ -119,6 +122,7 @@ class simple_component():
         self.colors                 = colors
         self.create_joints          = create_joints
         self.ctrl_names             = ctrl_names
+        self.associated_geos        = associated_geos # if set the geo bounding boxes will auto set the ctrl_sizes
         self.joint_parent           = joint_parent
         self.ctrl_shape_plane       = ctrl_shape_orient
         self.ctrl_rotation          = ctrl_rotation

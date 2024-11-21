@@ -1,7 +1,8 @@
+import math
 from importlib import reload
 from rig_2.tag import utils as tag_utils
 from rigbdp.build import misc
-from maya import cmds
+from maya import cmds, mel
 
 MODULES = [tag_utils, misc,]
 for mod in MODULES:
@@ -11,9 +12,9 @@ class create_rig_hier():
     def __init__(self,
                  name = "character",
                  model_root='',
-                 model_filepath='',
-
-                 rig_geo_filepaths=[]):
+                 model_path='',
+                 build_output_path='',
+                 rig_geo_path=[]):
         """
         type  name:                string
         param name:                character name
@@ -23,10 +24,10 @@ class create_rig_hier():
 
         #---vars
         self.groups = []
-        self.model_filepath = model_filepath
-        self.rig_geo_filepaths = rig_geo_filepaths
+        self.model_filepath = model_path
+        self.rig_geo_path = rig_geo_path
         self.model_root = model_root
-
+        self.build_output_path = build_output_path
         self.__create()
 
 
@@ -37,7 +38,10 @@ class create_rig_hier():
         model = self.__clean_import_file(self.model_filepath)
         cmds.parent(model, self.geo_grp)
         new_objects = []
-        for path in self.rig_geo_filepaths:
+
+        if not self.rig_geo_path:return
+
+        for path in self.rig_geo_path:
             new_objects += self.__clean_import_file(path)
         cmds.parent(new_objects, self.rig_grp)
         
@@ -60,7 +64,6 @@ class create_rig_hier():
         if imported_objects and type(imported_objects[0]) == list: 
             imported_objects = imported_objects[0]
 
-        print('IMPORTED OBJECTS : ', imported_objects)
         return imported_objects
 
 
@@ -68,45 +71,45 @@ class create_rig_hier():
     def __create_nodes(self):
         "Create and name rig transforms"
         self.root_grp= cmds.createNode("transform",
-                                        name = "c_" +
+                                        name = "C_" +
                                         self.name +
-                                        "_grp")
+                                        "_GRP")
 
         self.geo_grp = cmds.createNode("transform",
-                                        name   = "c_geo_grp",
+                                        name   = "C_geo_GRP",
                                         parent = self.root_grp)
 
         self.skeleton_grp = cmds.createNode("transform",
-                                            name   = "c_skeleton_grp",
+                                            name   = "C_skeleton_GRP",
                                             parent = self.root_grp)
         self.skel_bind = cmds.createNode("transform",
-                                             name   = "c_skelbind_grp",
+                                             name   = "C_skelbind_GRP",
                                              parent = self.skeleton_grp)
         self.skel_helper = cmds.createNode("transform",
-                                                name   = "c_skelhelp_grp",
+                                                name   = "C_skelhelp_GRP",
                                                 parent = self.skeleton_grp)
 
         self.rig_grp = cmds.createNode("transform",
-                                       name   = "c_rig_grp",
+                                       name   = "C_rig_GRP",
                                        parent = self.root_grp)
 
         self.rig_ctrl_grp = cmds.createNode("transform",
-                                    name   = "c_rigctrl_grp",
+                                    name   = "C_rigctrl_GRP",
                                     parent = self.rig_grp)
         self.rig_sizectrl_grp = cmds.createNode("transform",
-                                    name   = "c_ctrlsize_grp",
+                                    name   = "C_ctrlsize_GRP",
                                     parent = self.rig_ctrl_grp)
 
 
         self.maintenence_grp = cmds.createNode("transform",
-                                                name   = "c_maintenance_grp",
+                                                name   = "C_maintenance_GRP",
                                                 parent = self.root_grp)
 
 
 
 
         self.control_grp = cmds.createNode("transform",
-                                            name   = "c_control_grp",
+                                            name   = "C_control_GRP",
                                             parent = self.root_grp)
 
         self.groups = [self.root_grp, self.geo_grp, self.skeleton_grp, self.rig_grp, self.control_grp]
@@ -134,8 +137,8 @@ class create_rig_hier():
         self.ctrl_shape_vis = self.maintenence_grp + ".ctrl_shape_vis"
         cmds.setAttr(self.ctrl_shape_vis, cb = True, e=True)
 
-        # addAttr -ln "vis_fit_ctrl"  -at bool  |c_Template_grp|c_maintenance_grp;
-        # setAttr -e-channelBox true |c_Template_grp|c_maintenance_grp.vis_fit_ctrl;
+        # addAttr -ln "vis_fit_ctrl"  -at bool  |C_Template_grp|C_maintenance_grp;
+        # setAttr -e-channelBox true |C_Template_grp|C_maintenance_grp.vis_fit_ctrl;
 
     def finalize_maintenence(self):
         # meant to be used after the entire rig has finished building
@@ -177,8 +180,7 @@ class create_rig_hier():
     def __create(self):
         "Put it all together"
         cmds.file(new=True, force=True)
-
         self.__create_nodes()
-
         self.__lock_attrs()
         self.__import_maya_file()
+

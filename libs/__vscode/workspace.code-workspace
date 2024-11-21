@@ -1,0 +1,116 @@
+{
+	"folders": [
+		{
+			"name": "CARTWHEEL",
+			"path": "../../../CARTWHEEL"
+		},
+		{
+			"name": "pymel",
+			"path": "../../../../../../../AppData/Roaming/Python/Python311/site-packages/pymel"
+		},
+		{
+			"name": "scripts",
+			"path": "../../../../../../../Program Files/Autodesk/Maya2024/plug-ins/camd/scripts"
+		},
+		{
+			"name": "scripts",
+			"path": "../../../../BDP/SHAPES/SHAPES/modules/SHAPES/scripts"
+		},
+		{
+			"name": "SHAPES_transfer",
+			"path": "../../../../BDP/cha/SHAPES_transfer"
+		},
+		{
+			"name": "rigpy",
+			"path": "../.."
+		},
+		{
+			"path": "../../../../../../../Program Files/Autodesk/Maya2024/bin"
+		},
+		{
+			"path": "../../../../maya/2024/scripts"
+		},
+		{
+			"path": "../../../../maya/2024/prefs/scriptEditorTemp"
+		}
+	],
+
+	"settings": {
+		"python.defaultInterpreterPath": "..venv/bin/python",
+		"terminal.integrated.env.windows": {
+			"PYTHONPATH": "C:\\Users\\harri\\Documents\\Github\\rigpy\\libs\\CW;C:\\Users\\harri\\Documents\\Github\\rigpy\\libs\\*;C:\\Program Files\\Autodesk\\Maya2024\\bin\\mayapy.exe;${env:USERPROFILE}\\.vscode\\extensions\\fxtd-odyssey.mayapy-1.0.4\\mayaSDK"
+		},
+		"terminal.integrated.env.linux": {
+			"PYTHONPATH": "${env:HOME}/.vscode/extensions/fxtd-odyssey.mayapy-1.0.4/mayaSDK:${workspaceFolder}/libs:${env:PYTHONPATH}"
+		},
+
+		"terminal.integrated.env.osx": {
+			"PYTHONPATH": "${env:HOME}/.vscode/extensions/fxtd-odyssey.mayapy-1.0.4/mayaSDK:${workspaceFolder}/libs:${env:PYTHONPATH}"
+		},
+
+		"cSpell.words": [
+			"arccos",
+			"arpdecorator",
+			"asciiart",
+			"avars",
+			"bakpath",
+			"Bary",
+			"blendshape",
+			"blendshapes",
+			"buthaina",
+			"cmpnt",
+			"cmpnts",
+			"cmpt",
+			"cnsts",
+			"cpnt",
+			"ctls",
+			"ctrls",
+			"Docu",
+			"ffds",
+			"getargspec",
+			"harri",
+			"Hier",
+			"infl",
+			"interp",
+			"jnts",
+			"lerp",
+			"lerps",
+			"locopedal",
+			"mayafile",
+			"mayaified",
+			"Minimo",
+			"nowake",
+			"Nurbs",
+			"nurbscurve",
+			"outliner",
+			"pathing",
+			"pnts",
+			"propcmds",
+			"PYTHONPATH",
+			"rigbdp",
+			"rigbuild",
+			"rigmods",
+			"rigpy",
+			"rpdecorator",
+			"rtype",
+			"shldr",
+			"skel",
+			"skincluster",
+			"skinclusters",
+			"skinweights",
+			"slerp",
+			"startend",
+			"stdavar",
+			"stdavars",
+			"teshi",
+			"TESTBUILD",
+			"tmpcons",
+			"unnormalized",
+			"upchest",
+			"verts",
+			"xform",
+			"xforms"
+		]
+	}
+	
+}

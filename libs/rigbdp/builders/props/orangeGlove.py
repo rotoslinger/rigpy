@@ -1,17 +1,19 @@
 from importlib import reload
-from rigbdp.build.rig_hier import create_rig_hier
+from rigbdp.build import rig_hier
 from rig.propcmds import stdavars
 from rig.propcmds.OLD_components import prop_singleton
 from rig_2.tag import utils as tag_utils
 from rig.propcmds import prop_base
 
-MODULES = [prop_base, create_rig_hier, stdavars, prop_singleton, tag_utils]
+MODULES = [prop_base, rig_hier, stdavars, prop_singleton, tag_utils]
 for mod in MODULES:
     reload(mod)
 
 
-def create_std_rig(name = "orange_glove"):
-    rig_root = create_rig_hier(name=name)
+def create_std_rig(name = "orangeGlove"):
+    rig_root = rig_hier.create_rig_hier(name=name, 
+                                        model_path=r'C:\Users\harri\Documents\BDP\props\orangeGlove\subDocu_base_model_h_v001.mb'
+                                        )
     std_avars = stdavars.create_stdavar_ctrl(side = "C",
                                             skel_parent = rig_root.skeleton_grp,
                                             rig_parent = rig_root.rig_grp,
@@ -58,16 +60,3 @@ def create_std_rig(name = "orange_glove"):
                                     # ctrl_rotation = [0,90,0],
                                     debug = True)
         
-    
-        # prop_base.simple_component(side = "R",
-        #                             parent_hook=glove.ctrls[2],
-        #                             joint_parent=glove.joints[2],
-        #                             rig_parent=rig_root.rig_grp,
-        #                             ctrl_sizes = [2],
-        #                             ty_offsets = [0,0,0],
-        #                             ctrl_names = ["arm"],
-        #                             colors = [(0, 0, 1)],
-        #                             create_joints = True,
-        #                             create_buffer_shape = True,
-
-        #                             debug = True)

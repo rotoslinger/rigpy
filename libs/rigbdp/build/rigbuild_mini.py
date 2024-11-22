@@ -101,7 +101,8 @@ class RigMerge:
                  sdk_data_path=None,
                  wrap_eyebrows=True,
                  nowake_build=False,
-                 bs_conn_paths=None):
+                 bs_conn_paths=None,
+                 rig_vis_attr='preferences'):
         self.char_name = char_name
         self.input_rig_path = input_rig_path
         self.build_output_path = build_output_path
@@ -109,6 +110,7 @@ class RigMerge:
         self.SHAPES_mel_paths = SHAPES_mel_paths
         self.sdk_data_path = sdk_data_path
         self.bs_conn_paths = bs_conn_paths
+        self.rig_vis_attr = rig_vis_attr
 
         self.__input_file_check()
 
@@ -150,6 +152,7 @@ class RigMerge:
         
         # 3. Clean up the scene for corrective import
         for blendshape in self.corrective_blendshapes:
+            print('this is the blendshape ', blendshape)
             if bs_cleanup:
                 corrective.SHAPES_blendshape_cleanup(blendshape)
 
@@ -194,9 +197,11 @@ class RigMerge:
 
     def __minimo_add_vendor_overs(self):
         if self.nowake_build:return
-        vis_rig.setup_rig_vis(channel_box = True,
-                              hidden_in_outliner=False,
-                              skin_jnt_vis=False, sculpt_jnt_vis=False)
+        if cmds.objExists("preferences.showClothes"):
+            vis_rig.setup_rig_vis(channel_box = True,
+                                hidden_in_outliner=False,
+                                skin_jnt_vis=False, sculpt_jnt_vis=False,
+                                    attr_object=self.rig_vis_attr)
         if self.wrap_eyebrows:
             rig_utils.wrap_eyebrows()
 
@@ -220,6 +225,8 @@ class RigMerge:
             ''
     
     def rebuild_clothing_sculpts():
+        # PLACEHOLDER this needs to be implemented but I have included jsh's code as reference
+        # if this needs to be eventually added.
         # CUSTOM BLENDSHAPE CREATION because the body blendshape is driving all of the shirt blendshapes
         # we don't have to do a SHAPES build for it. This should become the standard for all clothing 
         # sculpts:

@@ -18,7 +18,7 @@ def sel_all_rename(old_name='jsh', new_name='teshi'):
             updated_name = node.replace(old_name, new_name)
             cmds.rename(node, updated_name, ignoreShape=True)
             renamed_nodes.add(updated_name)  # Add the new name to the set
-
+# sel_all_rename(old_name='teshi', new_name='dmytryk')
 @rpdecorator.undo_chunk
 def duplicate_and_rename(selection=None):
     """

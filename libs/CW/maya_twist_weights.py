@@ -98,14 +98,12 @@ class Weights:
 
     def mix_values_between(self, point_vectors, start_point, end_point,
                            # If given get the difference (from_inherit_wts-to_wts)
-                           start_inherit_wts: bool | list[float]=False,
-                           # If given get the difference (to_inherit_wts-from_wts)
-                           end_inherit_wts: bool | list[float]=False, 
+                           inherited_weights=[],
+                           pair_string='',
                            decimal_place: int | bool=5):
         
         # We don't want to ever inherit both start and end.
         # Trying to do this could mess up weight normalization which we won't want to do by accident
-        if start_inherit_wts and end_inherit_wts: return
         start_weights=[]
         end_weights=[]
 
@@ -123,25 +121,20 @@ class Weights:
             srt_pnt_length = (point-proj_p_srt).length()
             start_weights.append(srt_pnt_length/total_length)
 
-        end_weights = []
+
         # Normalize by getting the inverse start_weights
         end_weights = [1-wt for wt in start_weights]
 
-        if start_inherit_wts:
-            start_weights = [(vec_wt * inh_wt) for vec_wt, inh_wt in zip(start_weights,
-                                                                         start_inherit_wts)]
-            end_weights = [1-wt for wt in start_weights]
+        # print('PAIR STRING!!! ', pair_string, inherited_weights)
+        # print('end weights ', end_weights)
+        # print('inherited weights ', inherited_weights)
 
+        # start_weights = [(strt_wt * inh_wt) for strt_wt, inh_wt in zip(start_weights,
+        #                                                                inherited_weights)]
+        
 
-            # # Normalize by getting the inverse start_weights
-            # end_weights = [(swt-ewt) for swt, ewt in zip(start_weights, end_weights)]
-        elif end_inherit_wts:
-            # Normalize by getting the inverse start_weights
-            end_weights = [1-wt for wt in start_weights]
-            end_weights = [(vec_wt * inh_wt) for vec_wt, inh_wt in zip(end_weights,
-                                                                       end_inherit_wts)]
-            # do a reverse normalization on the start weights
-            start_weights = [1 -wt for wt in end_weights]
+        # end_weights = [(end_wt * inh_wt) for end_wt, inh_wt in zip(end_weights,
+        #                                                            inherited_weights)]
 
 
         if decimal_place and type(decimal_place) == int :
@@ -152,6 +145,103 @@ class Weights:
             end_weights = [round(ew, decimal_place) for ew in end_weights]
 
         return start_weights, end_weights
+
+
+
+    # def mix_values_between(self, point_vectors, start_point, end_point,
+    #                        inherited_start_wts=[],
+    #                        inherited_end_wts=[],
+    #                        decimal_place: int | bool=5):
+        
+    #     # We don't want to ever inherit both start and end.
+    #     # Trying to do this could mess up weight normalization which we won't want to do by accident
+    #     start_weights=[]
+    #     end_weights=[]
+
+    #     total_length = (start_point-end_point).length()
+
+    #     plane_srt_center = start_point
+    #     plane_srt_normal = end_point - start_point
+    #     plane_srt_normal.normalize()
+
+    #     for point in point_vectors:
+    #         proj_p_srt = self.project_point_to_plane(point, plane_srt_center, plane_srt_normal)[0]
+    #         # possible TODO
+    #         # should we worry about dividing by 0, or rounding the weight values?
+    #         # cmds.skinPercent(weights, pruneWeights=0.0001) could be fine to handle rounding...
+    #         srt_pnt_length = (point-proj_p_srt).length()
+    #         start_weights.append(srt_pnt_length/total_length)
+
+    #     # Normalize by getting the inverse start_weights
+    #     end_weights = [1-wt for wt in start_weights]
+
+    #     if decimal_place and type(decimal_place) == int :
+    #         # points can drift when world movement is 5 or more figures.
+    #         # rounding, in combination with maya.cmds.skinWeights flags pruneWeights & normalize
+    #         # can help to avoid these issues.
+    #         start_weights = [round(sw, decimal_place) for sw in start_weights]
+    #         end_weights = [round(ew, decimal_place) for ew in end_weights]
+
+    #     return start_weights, end_weights
+    # def mix_values_between(self, point_vectors, start_point, end_point,
+    #                     inherited_start_wts=None, inherited_end_wts=None,
+    #                     decimal_place: int | bool = 5):
+    #     """
+    #     Calculate blended weights for points based on their normalized distance
+    #     between start and end points, incorporating inherited weights.
+
+    #     :param point_vectors: List of points to process.
+    #     :param start_point: The starting point (MVector).
+    #     :param end_point: The ending point (MVector).
+    #     :param inherited_start_wts: Existing start weights to mix in.
+    #     :param inherited_end_wts: Existing end weights to mix in.
+    #     :param decimal_place: Number of decimal places to round the results.
+    #     :return: Tuple of start weights and end weights.
+    #     """
+
+    #     # Initialize weights
+    #     inherited_start_wts = inherited_start_wts or [0] * len(point_vectors)
+    #     inherited_end_wts = inherited_end_wts or [0] * len(point_vectors)
+        
+    #     # Ensure the inherited weights match the size of the point list
+    #     if len(inherited_start_wts) != len(point_vectors) or len(inherited_end_wts) != len(point_vectors):
+    #         raise ValueError('Inherited weights must match the number of point vectors.')
+        
+    #     start_weights = []
+    #     end_weights = []
+
+    #     # Calculate total length and normalize the direction
+    #     total_length = (start_point - end_point).length()
+    #     plane_srt_normal = end_point - start_point
+    #     plane_srt_normal.normalize()
+
+    #     for i, point in enumerate(point_vectors):
+    #         # Project the point onto the plane and calculate its length relative to the start
+    #         proj_p_srt = self.project_point_to_plane(point, start_point, plane_srt_normal)[0]
+    #         srt_pnt_length = (point - proj_p_srt).length()
+    #         weight_ratio = srt_pnt_length / total_length
+
+    #         # Compute the raw weights
+    #         raw_start_weight = weight_ratio
+    #         raw_end_weight = 1 - weight_ratio
+
+    #         # Blend with inherited weights using linear interpolation
+    #         start_weight = (1 - raw_start_weight) * inherited_start_wts[i] + raw_start_weight * raw_start_weight
+    #         end_weight = (1 - raw_end_weight) * inherited_end_wts[i] + raw_end_weight * raw_end_weight
+
+    #         # Append blended weights to the lists
+    #         start_weights.append(start_weight)
+    #         end_weights.append(end_weight)
+
+    #     # Round weights if specified
+    #     if decimal_place and isinstance(decimal_place, int):
+    #         start_weights = [round(wt, decimal_place) for wt in start_weights]
+    #         end_weights = [round(wt, decimal_place) for wt in end_weights]
+
+    #     return start_weights, end_weights
+
+
+
 
     def set_pair_weights(self, joints, geom, skincluster,
                          use_existing_wts=False, inherit_start=True, inherit_end=True):
@@ -183,38 +273,67 @@ class Weights:
 
         print('start_wts : ', start_wts)
         print('end_wts : ', end_wts)
-        for idx, pair in enumerate(pairs):
-            # TODO: add inherit weight functionality.
-            jnt_start, jnt_end = pair
-            joint_start = self.get_xform_as_mvector(jnt_start)
-            joint_end = self.get_xform_as_mvector(jnt_end)
-            start_inherit_wts=False
-            end_inherit_wts=False
-            indices, p_vectors = self.points_between_startend(point_indices,
-                                                              point_vectors,
-                                                              joint_start,
-                                                              joint_end)
-            if inherit_start and idx == 0:
-                start_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom, 
-                                                                 joints[0], indices)
 
 
-            if inherit_end and idx == len(pairs)-1:
-                end_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom,
-                                                               joints[-1], indices)
+        # Do 2 loops. one for the start, one for the end.
+        # You need to distribute start then you distribute end.
+        for joint in [joints[0], joints[-1]]:
+            for idx, pair in enumerate(pairs):
+                if joint == joints[-1]: continue
+                # TODO: add inherit weight functionality.
+                jnt_start, jnt_end = pair
+                joint_start = self.get_xform_as_mvector(jnt_start)
+                joint_end = self.get_xform_as_mvector(jnt_end)
+                indices, p_vectors = self.points_between_startend(point_indices,
+                                                                point_vectors,
+                                                                joint_start,
+                                                                joint_end)
+                print(pair)
+                if not indices: continue
+                # if inherit_start and idx == 0:
+                #     start_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom, 
+                #                                                      joints[0], indices)
 
-            print('start_inherit_wts ', start_inherit_wts)
-            print('end_inherit_wts ', end_inherit_wts)
-            wt_start, wt_end = self.mix_values_between(p_vectors, joint_start, joint_end,
-                                                       start_inherit_wts=start_inherit_wts,
-                                                       end_inherit_wts=end_inherit_wts,
-                                                       decimal_place=False
-                                                       )
-            point_names = [f'{geom}.vtx[{idx}]' for idx in indices]
-            for geo, si, ei in zip(point_names, wt_start, wt_end):
-                # same time, to avoid breaking normalization.
-                cmds.skinPercent(skincluster, geo, transformValue=[(jnt_start, ei), (jnt_end,si)])
-            # self.color_points_start_end(point_names, (wt_start, wt_end))
+
+                # if inherit_end and idx == len(pairs)-1:
+                #     end_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom,
+                #                                                    joints[-1], indices)
+
+                # print('start_inherit_wts ', start_inherit_wts)
+                # print('end_inherit_wts ', end_inherit_wts)
+                # wt_start, wt_end = self.mix_values_between(p_vectors, joint_start, joint_end,
+                #                                            start_inherit_wts=start_inherit_wts,
+                #                                            end_inherit_wts=end_inherit_wts,
+                #                                            decimal_place=False
+                #                                            )
+                
+                inherit_wts = self.get_joint_weight_by_idx(skincluster, geom, 
+                                                                    joint, indices)
+
+                print('THIS IS THE PAIR : ', pair)
+                print('This is the joint : ', joint)
+                print('inherit weight values  ', inherit_wts)
+                print('p_vectors ', p_vectors)
+                print('joint_end ', joint_end)
+                print('joint_end ', joint_end)
+
+
+
+
+                wt_start, wt_end = self.mix_values_between(p_vectors, joint_start, joint_end,
+                                                        inherited_weights=inherit_wts,
+                                                        #    inherited_end_wts=end_inherit_wts,
+                                                        pair_string=str(pair), 
+                                                        decimal_place=False
+                                                        )
+
+                point_names = [f'{geom}.vtx[{idx}]' for idx in indices]
+                for geo, s_wt, e_wt in zip(point_names, wt_start, wt_end):
+                    if not s_wt and not e_wt: continue
+                    print('happening')
+                    # same time, to avoid breaking normalization.
+                    cmds.skinPercent(skincluster, geo, transformValue=[(jnt_start, e_wt), (jnt_end,s_wt)])
+                # self.color_points_start_end(point_names, (wt_start, wt_end))
         return r_point_names
 
     def safe_add_influences(self, joints, skincluster):
@@ -892,7 +1011,7 @@ class Weights:
             idx_list, point_vectors = self.points_between_startend(point_indices,
                                                                         point_vectors, 
                                                                         start_plane, end_plane)
-            srt_wts, end_wts = self.mix_values_by_distance(point_vectors, start_plane, end_plane,
+            srt_wts, end_wts = self.mix_values_between(point_vectors, start_plane, end_plane,
                                                            start_inherit_wts=False,
                                                            end_inherit_wts=False,
                                                            # decimal_place=False
@@ -940,14 +1059,16 @@ class Weights:
 #           type="mayaAscii",
 #           open=True)
 # time.sleep(1)
-cmds.select(cl=True)
-cmds.deformerWeights('skinCluster8.xml', im = True, method = "index", deformer='skinCluster8', path = r'C:\Users\harri\Documents\cartwheel\working_files')
-cmds.deformerWeights('skinCluster9.xml', im = True, method = "index", deformer='skinCluster9', path = r'C:\Users\harri\Documents\cartwheel\working_files')
+# cmds.select(cl=True)
+# cmds.deformerWeights('skinCluster8.xml', im = True, method = "index", deformer='skinCluster8', path = r'C:\Users\harri\Documents\cartwheel\working_files')
+# cmds.deformerWeights('skinCluster9.xml', im = True, method = "index", deformer='skinCluster9', path = r'C:\Users\harri\Documents\cartwheel\working_files')
 
-cmds.skinPercent('skinCluster8', 'Coat_geo', normalize = True)
-cmds.skinPercent('skinCluster9', 'Body_geo', normalize = True)
+# cmds.skinPercent('skinCluster8', 'Coat_geo', normalize = True)
+# cmds.skinPercent('skinCluster9', 'Body_geo', normalize = True)
 
-
+cmds.setAttr('right_elbow_fk_ctrl.rx', 0)
+cmds.setAttr('right_elbow_fk_ctrl.ry', 0)
+cmds.setAttr('right_elbow_fk_ctrl.rz', 0)
 
 joints = ['jointtg', 'sfd', 'fgbf', 'joint5', 'joint2', 'sgv', 'joint4', 'cv']
 

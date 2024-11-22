@@ -16,23 +16,23 @@ def suppress_warnings(func):
     return wrapper
 
 def setup_rig_vis(channel_box = True, hidden_in_outliner=False,
-                  skin_jnt_vis=False, sculpt_jnt_vis=True, is_historically_interesting=True):
+                  skin_jnt_vis=False, sculpt_jnt_vis=True, is_historically_interesting=True, attr_object='preferences'):
     # create divider
-    if not cmds.objExists('preferences.__________________'):
-        cmds.addAttr('preferences', longName="__________________", attributeType='enum', enumName='_________:')
-        cmds.setAttr('preferences.__________________', e=True, channelBox=True)
+    if not cmds.objExists(f'{attr_object}.__________________'):
+        cmds.addAttr(f'{attr_object}', longName="__________________", attributeType='enum', enumName='_________:')
+        cmds.setAttr(f'{attr_object}.__________________', e=True, channelBox=True)
 
     long_names=['rig_hidden_in_outliner', 'skin_joints_vis', 'sculpt_joints_vis']
     nice_names=['Rig Hidden In Outliner', 'Skin Joints Visibility', 'Sculpt Joints Visibility']
 
     for index, attr in enumerate(long_names):
-        if not cmds.objExists(f'preferences.{attr}'):
-            cmds.addAttr('preferences', longName=long_names[index], niceName=nice_names[index], attributeType='bool')
-        cmds.setAttr(f'preferences.{attr}', e=True, channelBox=True)
+        if not cmds.objExists(f'{attr_object}.{attr}'):
+            cmds.addAttr(f'{attr_object}', longName=long_names[index], niceName=nice_names[index], attributeType='bool')
+        cmds.setAttr(f'{attr_object}.{attr}', e=True, channelBox=True)
 
-    hidden_in_outliner_attr = 'preferences.rig_hidden_in_outliner'
-    skin_vis_attr = 'preferences.skin_joints_vis'
-    sculpt_vis_attr = 'preferences.sculpt_joints_vis'
+    hidden_in_outliner_attr = f'{attr_object}.rig_hidden_in_outliner'
+    skin_vis_attr = f'{attr_object}.skin_joints_vis'
+    sculpt_vis_attr = f'{attr_object}.sculpt_joints_vis'
     full_attrs = [hidden_in_outliner_attr, skin_vis_attr, sculpt_vis_attr]
 
     rig_root = 'rig_grp'
@@ -47,7 +47,7 @@ def setup_rig_vis(channel_box = True, hidden_in_outliner=False,
             cmds.connectAttr(skin_vis_attr, f'{skin_grp}.v', force=True)
         if 'M_masterWalkOut_jnt' in obj:
             cmds.connectAttr(sculpt_vis_attr, f'{sculpt_jnts}.v', force=True)
-    full_attrs.insert(0, 'preferences.__________________')
+    full_attrs.insert(0, f'{attr_object}.__________________')
 
     # sets arg attr vals
     arg_attrs = [None, hidden_in_outliner, skin_jnt_vis, sculpt_jnt_vis]

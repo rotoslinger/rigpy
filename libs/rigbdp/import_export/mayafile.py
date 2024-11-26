@@ -44,3 +44,35 @@ def get_first_file(path, file_type='mel'):
 # json_files_recursive = file_at_relative_path('../weight_data/**/*', filetype='.json')
 # print("Recursive matching JSON files:", json_files_recursive)
 ######################################################################################C:\Users\harri\Documents\BDP\cha\teshi\src\teshi_RIG_200_v008 .ma
+
+def import_geometry_to_group(file_path, group_name):
+    """
+    Import geometry into a specified group.
+
+    :param str file_path: The file path of the geometry to import.
+    :param str group_name: The name of the group to parent the geometry under.
+    """
+    # Check if the group exists
+    if not cmds.objExists(group_name):
+        cmds.error(f'Group "{group_name}" does not exist.')
+        return
+    
+    # Import the geometry
+    imported_nodes = cmds.file(file_path, i=True, returnNewNodes=True)
+    
+    # Filter out transform nodes (geometry containers)
+    transforms = [node for node in imported_nodes if cmds.nodeType(node) == 'transform']
+    print('transforms', transforms)
+    # Parent the transform nodes to the specified group
+    for transform in transforms:
+        try:
+            cmds.parent(transform, group_name)
+        except:
+            pass
+    
+    return transforms
+
+# Example usage
+# file_path = r'C:\Users\harri\Documents\BDP\cha\jsh\input\model\jsh_proxyClothes_geo.mb'
+# group_name = 'jsh_base_model_h_hi_grp'
+# import_geometry_to_group(file_path, group_name)

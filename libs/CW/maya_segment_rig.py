@@ -58,7 +58,14 @@ class SegmentRig:
                             no_twist_jnt=self.no_tw_ik_start_jnt,
                             twist_jnt=self.tw_ik_start_jnt,
                             weights=[[1], [.0]])
+        # blend rotations for end tw
+        self.__blend_rotations([self.end_tw_buf_parent], 
+                            no_twist_jnt=self.no_tw_ik_start_jnt,
+                            twist_jnt=self.tw_ik_start_jnt,
+                            weights=[[0.0], [1.0]])
+        
         cmds.pointConstraint(self.start_jnt, self.start_tw_buf_parent, mo=False)
+        cmds.pointConstraint(self.end_jnt, self.end_tw_buf_parent, mo=False)
 
         # Attach chains and handles to start and end
         cmds.parentConstraint(self.start_jnt, self.ik_joints_group, mo=True)
@@ -69,7 +76,7 @@ class SegmentRig:
                         stretch_jnts=self.tw_buf_parents, vector_weights=self.wt1)
         
 
-        self.twist_jnts = [self.start_tw_jnt] + self.between_twist_jnts
+        self.twist_jnts = [self.start_tw_jnt] + self.between_twist_jnts + [self.end_tw_jnt]
         self.twist_joints_out = []
         for idx, jnt in enumerate(self.twist_jnts):
             bind_jnt = cmds.createNode('joint', parent=self.start_jnt,
@@ -105,15 +112,26 @@ class SegmentRig:
                                     parent=self.component_root, orient_only=True)[1]
         self.start_tw_jnt = cmds.createNode('joint', parent=None,
                                             name=f'{self.start_jnt}_{self.jnt_suffix}{0:02}')
+        end_num = self.num_tw_jnts + 1
+        self.end_tw_jnt = cmds.createNode('joint', parent=None,
+                                            name=f'{self.start_jnt}_{self.jnt_suffix}{end_num:02}')
 
         cmds.setAttr(f'{self.start_tw_jnt}.jointOrient', *start_orient, type='double3')
+        cmds.setAttr(f'{self.end_tw_jnt}.jointOrient', *start_orient, type='double3')
         self.start_tw_jnt = cmds.parent(self.start_tw_jnt, self.component_root)[0]
+        self.end_tw_jnt = cmds.parent(self.end_tw_jnt, self.component_root)[0]
 
         start_tw_buffers = self.create_buffer(self.start_tw_jnt,
                                               parent=self.component_root,
                                               num_buffers=2)
         self.start_tw_buf_parent = start_tw_buffers[0]
         self.start_tw_buf_child = start_tw_buffers[1]
+
+        end_tw_buffers = self.create_buffer(self.end_tw_jnt,
+                                              parent=self.component_root,
+                                              num_buffers=2)
+        self.end_tw_buf_parent = end_tw_buffers[0]
+        self.end_tw_buf_child = end_tw_buffers[1]
 
         # No tw chain
         self.tw_ik_start_jnt = self.__clone_jnt(self.start_jnt,
@@ -144,8 +162,7 @@ class SegmentRig:
             buffers = self.create_buffer(new_jnt, parent=self.component_root, num_buffers=2)
             self.tw_buf_parents.append(buffers[0])
             self.tw_buf_children.append(buffers[1])
-            # cmds.setAttr(f'{new_jnt}.displayLocalAxis', 1)
-    
+
     def __generate_lerp_weights(self):
         # Hard coding start and end for now. In the future we may want to give them as args
         # These values normalize the weights between 0-1.
@@ -186,7 +203,7 @@ class SegmentRig:
     def create_crv(self, pnts, name, parent, degree) -> str:
         crv = cmds.curve(p=pnts, d=degree, n=name)
         if parent: crv = cmds.parent(crv, parent)[0]
-        return crv 
+        return crv
 
     def create_crv_any(self, points, degree=3):
         num_cvs = len(points)

@@ -2,7 +2,7 @@ import importlib, json
 # from maya import cmds, mel
 
 import rpdecorator
-from rigbdp import utils as rig_utils
+from rigbdp.build import build_utils as rig_utils
 from rigbdp.import_export import sdk_utils, corrective
 from rigbdp.build import post_scripts, rigbuild_mini
 

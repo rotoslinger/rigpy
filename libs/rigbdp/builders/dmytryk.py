@@ -3,7 +3,7 @@ import importlib, os
 from maya import cmds, mel
 
 
-from rigbdp import utils as rig_utils
+from rigbdp.build import build_utils as rig_utils
 from rigbdp.import_export import sdk_utils, corrective
 from rigbdp.build import post_scripts, rigbuild_mini, build_pathing
 from rigbdp.builders.rigmods import rig_mods
@@ -58,8 +58,6 @@ rig_merge.add_vendor_rig()
 
 
 # 1a. custom scripts
-rig_mods.BDP_outSkel_rigMod()
-# bdp_rig_mods.create_lips_sculpt_jnts()
 
 #--------------------------------------------------------
 

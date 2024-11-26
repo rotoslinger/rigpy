@@ -6,11 +6,14 @@ from maya import cmds
 from maya import mel
 # bdp
 import rpdecorator
+
+from rigbdp.build import locking
 from rigbdp.import_export import file as file_utils
 from rigbdp.import_export import get_scene_dir
 # from rigbdp import arpdecorator
 
 # reloads (DELETE_ME)
+importlib.reload(locking)
 importlib.reload(rpdecorator)
 importlib.reload(file_utils)
 
@@ -442,3 +445,115 @@ def import_animation_from_json(file_path):
 # Example usage
 # import_animation_from_json(path)
 ####################################################### Example usage ##########################################################
+
+
+
+def get_skinclusters_on_mesh(mesh):
+    skin_clusters=[]
+
+    for skin_cluster in cmds.ls(type='skinCluster'):
+        geoms = cmds.skinCluster(skin_cluster, q=True, geometry=True)
+        if not geoms: continue
+        '''
+        Finding the skincluster associated with the mesh
+
+        We really only care about things that end in Shape
+
+        Because the skincluster geometry query only returns shape names, we need to check if
+        the geometry in the skincluster ends in Shape. If this is true, any partial naming matches
+        get culled out and you can focus on only meshes.
+        '''
+        # makes sure that string eyebrows_mesh is in the skincluster, and also ends with meshShape 
+        if mesh in geoms[0] and geoms[0].endswith('Shape'):
+            skin_clusters.append(skin_cluster)
+            #cmds.skinCluster(skin_cluster, edit=True, unbind=True)
+    return skin_clusters
+
+def replace_keys_with_string(dictionary, source_name, target_name):
+    """Replace occurrences of source_name with target_name in each dictionary key."""
+    new_dict = {}
+    for key, value in dictionary.items():
+        new_key = key.replace(source_name, target_name)
+        new_dict[new_key] = value
+    return new_dict
+
+def replace_keys_and_values_in_nested_dict(dictionary, source_name, target_name):
+    """Recursively replace occurrences of source_name with target_name in all string keys and values."""
+    new_dict = {}
+    for key, value in dictionary.items():
+        # Replace in the key if it's a string
+        new_key = key.replace(source_name, target_name) if isinstance(key, str) else key
+        
+        # If value is a dictionary, recurse
+        if isinstance(value, dict):
+            new_value = replace_keys_and_values_in_nested_dict(value, source_name, target_name)
+        # Replace in the value if it's a string
+        elif isinstance(value, str):
+            new_value = value.replace(source_name, target_name)
+        else:
+            new_value = value
+        
+        # Assign the modified key and value to the new dictionary
+        new_dict[new_key] = new_value
+    
+    return new_dict
+
+
+def smart_copy_skinweights(source_mesh, target_mesh,
+                           skin_clusters=[],
+                           filepath=r'C:\Users\harri\Documents\BDP\cha\jsh\input'):
+    if not skin_clusters:
+        skin_clusters = get_skinclusters_on_mesh(source_mesh)
+    # print('GEOMS', source_mesh)
+    # print('SKINCLUSTERS ', skin_clusters)
+    src_skin_influences = {}
+    src_connection_maps = {}
+    target_skinclusters = []
+
+    target_connection_maps = {}
+    for idx, source_skincluster in enumerate(skin_clusters):
+        # try:
+        map = locking.get_compound_attr_connect_map(node = source_skincluster, compound_attr='matrix')
+        locking.export_to_json(map, filename_prefix=source_skincluster,
+                               file_path=filepath, suffix='CONNECTION_MAP')
+
+        src_connection_maps[f'{source_skincluster}_MAP'] = map
+        locking.connect_skin_joints(map, source_skincluster)
+        influences = cmds.skinCluster(source_skincluster, query=True, influence=True)
+        src_skin_influences[source_skincluster]=influences
+        # except Exception as e:
+        #     print('ERROR : ', e)
+        #     influences = cmds.skinCluster(source_skincluster, query=True, influence=True)
+        #     skin_influence_map[source_skincluster]=influences
+    # target_skin_influence_map = replace_keys_with_string(src_skin_influence_map, source_mesh, target_mesh)
+    for source_skincluster in src_skin_influences:
+        # print(f'skincluster: {source_skincluster}\ninfluences: {skin_influence_map[source_skincluster]}')
+        skincluster_new_name = source_skincluster.replace(source_mesh, target_mesh)
+        target_skinclusters.append(skincluster_new_name)
+
+        if not cmds.objExists(skincluster_new_name):
+            skincluster_new_name = cmds.skinCluster(target_mesh,
+                                                  src_skin_influences[source_skincluster],
+                                                  bindMethod=0,
+                                                  toSelectedBones=True,
+                                                  multi=True,
+                                                  name=skincluster_new_name)[0]
+        # print('INFLUENCES ',skin_influence_map[source_skincluster])
+        # print('COPYING FOR ',source_skincluster)
+        cmds.copySkinWeights(sourceSkin=source_skincluster,
+                                destinationSkin=skincluster_new_name,
+                                noMirror=True,
+                                influenceAssociation=['label', 'name', 'oneToOne'] # "oneToOne" 'label'
+                                )
+    
+
+    for idx, source_skincluster in enumerate(skin_clusters):
+        json_data = locking.import_json_conn_map(file_path=filepath, filename_prefix=source_skincluster, suffix="CONNECTION_MAP")
+        locking.connect_matrix_mults(connection_map=json_data, skincluster_name=source_skincluster)
+
+        new_json_data = replace_keys_and_values_in_nested_dict(json_data, source_mesh, target_mesh)
+
+        # print(json.dumps(new_json_data, indent=4))
+        locking.connect_matrix_mults(connection_map=new_json_data, skincluster_name=target_skinclusters[idx], debug=False)
+        # print('Connected new Matrix mults', skincluster_new_name)
+

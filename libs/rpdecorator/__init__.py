@@ -28,6 +28,36 @@ try:
                 else:
                     cmds.select(clear=True)  # Clear selection if original was empty
         return wrapper
+    
+    def return_created_nodes(func):
+        """
+        This function is to return nodes created by a maya command that doesn't return anything
+        
+        It does this by:
+        1. find all nodes before function runs
+        2. run function
+        3. find all nodes after the function runs
+        4. find the nodes that were not in the first list - these are the created nodes
+        5. return the newly created nodes
+
+        """
+        def wrapper(*args, **kwargs):
+            # Get the current list of all nodes in the scene before running the function
+            all_nodes_before = cmds.ls(long=True)
+            
+            # Run the function
+            result = func(*args, **kwargs)
+            
+            # Get the list of all nodes after running the function
+            all_nodes_after = cmds.ls(long=True)
+            
+            # Find the difference between nodes before and after
+            created_nodes = list(set(all_nodes_after) - set(all_nodes_before))
+            
+            return created_nodes  # Return the list of created nodes
+        
+        return wrapper
+
 
     def undo_chunk(func):
         @wraps(func)

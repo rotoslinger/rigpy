@@ -2,13 +2,15 @@ import os, importlib, glob
 
 from maya import cmds, mel
 from rigbdp.builders.rigmods import rig_mods
-from rigbdp.import_export import sdk_utils, corrective
+from rigbdp.import_export import sdk_utils, corrective, skin, mayafile
 from rigbdp.build import post_scripts, vis_rig
-from rigbdp import utils as rig_utils
+from rigbdp.build import build_utils as rig_utils
 
 importlib.reload(rig_mods)
+importlib.reload(mayafile)
 importlib.reload(sdk_utils)
 importlib.reload(corrective)
+importlib.reload(skin)
 importlib.reload(post_scripts)
 importlib.reload(vis_rig)
 importlib.reload(rig_utils)
@@ -102,6 +104,8 @@ class RigMerge:
                  wrap_eyebrows=True,
                  nowake_build=False,
                  bs_conn_paths=None,
+                 extra_geo_importpath='',
+                 char_dir='',
                  rig_vis_attr='preferences'):
         self.char_name = char_name
         self.input_rig_path = input_rig_path
@@ -111,7 +115,9 @@ class RigMerge:
         self.sdk_data_path = sdk_data_path
         self.bs_conn_paths = bs_conn_paths
         self.rig_vis_attr = rig_vis_attr
-
+        self.extra_geo_importpath = extra_geo_importpath
+        self.char_dir = char_dir
+        self.body_geo = f'{self.char_name}_base_body_geo'
         self.__input_file_check()
 
         # populate a list called self.corrective_meshes from the self.corrective_mel_paths
@@ -130,9 +136,14 @@ class RigMerge:
         # 1. Create a new scene
         cmds.file(new=True, force=True)
 
+        
         # 2. Import the MnM rig build
         self.__import_rig_clean()
 
+        # add the sculpt joints
+        rig_mods.BDP_outSkel_rigMod()
+
+        self.import_extra_geo()
         # Finally, 
         # If no build output, leave saving up to user discretion
         if not self.build_output_path: return
@@ -194,6 +205,20 @@ class RigMerge:
             if ns not in ['UI', 'shared']:
                 cmds.namespace(force=True, moveNamespace=(ns, ':'))
                 cmds.namespace(removeNamespace=ns)
+
+    def import_extra_geo(self):
+        geos = list()
+        if not self.extra_geo_importpath:return
+        for x_geopath in self.extra_geo_importpath:
+            geos.append(mayafile.import_geometry_to_group(x_geopath,
+                                                         f'{self.char_name}_base_model_h_hi_grp'))
+
+    def smart_skin_copy(self, copy_from_geo='', copy_to_geo='', skincluster = ''):
+        # primarily for copying clothing.  I am going to hardcode the body to be what weights are
+        # copied from
+        skin.smart_copy_skinweights(copy_from_geo, copy_to_geo,
+                        skin_clusters=[skincluster],
+                        filepath=self.char_dir)
 
     def __minimo_add_vendor_overs(self):
         if self.nowake_build:return

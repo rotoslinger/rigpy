@@ -847,35 +847,3 @@ def copy_files_with_newer_timestamps(source_dir, destination_dir):
 # destination_directory = 'path/to/destination/directory'
 # copy_files_with_newer_timestamps(source_directory, destination_directory)
 ######################################################################################
-module_path = os.path.dirname(os.path.realpath(__file__))
-
-# source_directory = r'../../../../'
-# destination_directory = r'C:\Users\harri\Desktop\libs_copy_path_test'
-# copy_files_with_newer_timestamps(source_directory, destination_directory)
-
-r"""
-#!/bin/bash
-
-# Check if the correct number of arguments is provided
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <src_dir> <dest_dir>"
-    exit 1
-fi
-
-# Assign arguments to variables
-SOURCE_DIR="$1"
-DESTINATION_DIR="$2"
-
-# Call the Python script to copy files
-python3 -c "import sys; sys.path.append('${SOURCE_DIR}'); from file import copy_files_except; copy_files_except('${SOURCE_DIR}', '${DESTINATION_DIR}')"
-
-# Usage examples
-cat << EOF
-Usage examples:
-1. To copy files from /home/user/source to /home/user/destination:
-   ./copy_files.sh /home/user/source /home/user/destination
-
-2. To copy files from /path/to/source_dir to /path/to/destination_dir:
-   ./copy_files.sh /path/to/source_dir /path/to/destination_dir
-EOF
-"""

@@ -138,11 +138,13 @@ def return_found_files(char_name, dir_to_char, new_version_number):
     SHAPES_dir = rf'{dir_to_char}SHAPES{sep}'
     output_dir = rf'{dir_to_char}output{sep}'
     input_dir = rf'{dir_to_char}input{sep}'
+    extra_models_dir = rf'{dir_to_char}input{sep}model{sep}'
     # Find all files with the specified MnM and SHAPES extensions in their directories
     input_rig_path = glob.glob(f'{input_dir}*{input_extension}')
     if not input_rig_path: input_rig_path= glob.glob(f'{input_dir}*.mb')
     SHAPES_mel_paths = glob.glob(f'{SHAPES_dir}*{SHAPES_extension}')
     bs_connection_maps = glob.glob(f"{input_dir}BsConnMap_*")
+    extra_models = glob.glob(f'{extra_models_dir}*.mb')
     # Construct output filename based on character name and version
     output_filename = f'{char_name}_RIG_200_v{new_version_number:03}.ma'
     build_output_path = f'{output_dir}{output_filename}'
@@ -156,6 +158,8 @@ def return_found_files(char_name, dir_to_char, new_version_number):
                    'build_output_path': build_output_path,
                    'sdk_data_path': sdk_data_path,
                    'bs_connection_maps': bs_connection_maps,
+                   'char_dir': dir_to_char,
+                   'extra_models': extra_models,
                    }
     # Return a dictionary with all found file paths
     return return_dict

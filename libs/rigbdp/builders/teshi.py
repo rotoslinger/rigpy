@@ -3,7 +3,7 @@
 import importlib
 #from maya import cmds, mel
 
-from rigbdp import utils as rig_utils
+from rigbdp.build import build_utils as rig_utils
 from rigbdp.import_export import sdk_utils, corrective
 from rigbdp.build import post_scripts, rigbuild_mini, build_pathing
 from rigbdp.builders.rigmods import rig_mods
@@ -19,7 +19,7 @@ for mod in MODULES:
 # Unique char args
 dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'teshi'
-version = 14
+version = 17
 #########################################################
 
 # If you don't have the directories, this will create them.
@@ -52,7 +52,6 @@ rig_merge = rigbuild_mini.RigMerge(
 rig_merge.add_vendor_rig()
 
 # --- pre corrective import scripts
-rig_mods.BDP_outSkel_rigMod()
 
 # 2. Import correctives
 rig_merge.import_correctives()

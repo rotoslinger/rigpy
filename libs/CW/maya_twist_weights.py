@@ -293,7 +293,7 @@ class Weights:
     def get_joint_weights(self, skinCluster, mesh, joint):
         # Returns a sparse list of weights (only includes points that have a non-zero weight)
         # This makes per point lookups unsafe because indexing will not be properly ordered.
-        # For a complete list of all indices, see method 'get_joint_allweights' below.
+        # For a complete list of all indices, use method 'get_joint_allweights' below.
 
         # Turn the point list into an integer list, then convert it to type kMeshVertComponent 
         cpnt_indices = self.get_influenced_points(skinCluster, joint)[1]
@@ -530,7 +530,7 @@ class Weights:
                 if not parent in xforms:
                     start=xform
                     break
-            # make sure the start is at the start of the lsit
+            # make sure the start is at the start of the list
             xforms.remove(start)
             xforms.insert(0, start)
         # Assuming self.get_xform_as_mvector is a method to get the position of a joint as an MVector

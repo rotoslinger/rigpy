@@ -131,7 +131,8 @@ class Weights:
 
         return skinclusters, geometries
 
-    def gather_weighted_points(self, joints, skincluster):
+    def gather_weighted_points(self, joints:list[str], skincluster:str)-> tuple[list[str],
+                                                                                list[int]]:
         all_points=set()
         all_indices=set()
         for joint in joints:
@@ -149,46 +150,48 @@ class Weights:
             if not joint in influences:
                 cmds.skinCluster(skincluster, edit=True, addInfluence=joint, weight=0)
 
-
-
-    def distribute_startend_weight(self, start_joint, end_joint, joints):
-        # TODO: Look at CW.skinweights_example.py for OpenMaya implementation
+    def distribute_startend_weight(self, start_joint:str, end_joint:str, joints:list[str]):
         joints = self.sort_by_hier_dist(joints)[0]
 
         # if any of the start joint weight is in the end joint weight you need to
         # swap with the end joint
-        point_names=[]
         common_points = []
         # find all points to act on.
         skinclusters, geometries = self.get_influence_data([start_joint, end_joint])
 
         
         for skin, geo in zip(skinclusters, geometries):
-            # because you are distributing weights between start and end joint, any weighting
-            # from the start joint on the end joint (elbow to hand) will need to be moved to the
-            # second to last joint in the joints list.
+            # if joints are not already in the skincluster, add them
             self.safe_add_influences(joints, skin)
-            tmp_pts = self.point_weight_intersection([start_joint, end_joint], skin, geo)
 
+            # NOTE: when points are weighted to both the start and end joint (the transition from
+            # elbow to hand) any weighting will need to be moved to the last twist in the joints
+            # list this joint provides a stable counter weight for falloff in the wrist area during
+            # hand movement.
+
+            # move weights from start joint to joints[-1], but only for points whose weights
+            # intersect. The intersection includes points that fall inside and outside the
+            # start/end planes
+            tmp_pts = self.point_weight_intersection([start_joint, end_joint], skin, geo)
             if tmp_pts:
                 self.move_maya_skinweights(skin, geo, tmp_pts, start_joint, joints[-1])
                 common_points += tmp_pts
-            
-            point_names+=self.set_pair_weights(joints, geo, skin)
-        
-        # cmds.select(common_points)
-    def set_pair_weights(self, joints, geom, skincluster,
+
+            self.set_pair_weights(joints, start_joint, joints[-1], geo, skin)
+
+    def set_pair_weights(self, joints, start_joint, end_joint, geom, skincluster,
                          use_existing_wts=False): 
         # it is very important to remember that due to weight normalization, you will only want to
         # distribute the weights from the start joint
         # end joint will automatically get distributed as the start weights are multiplied by the
         # gradient distribution, so they will not wipe out the end weights.
     
-        weight_joint = joints[0]
+        start_wt_jnt = start_joint
+        end_wt_jnt = end_joint
 
         joints, pairs = self.sort_by_hier_dist(joints)
-        start_plane = self.get_xform_as_mvector(joints[0])
-        end_plane = self.get_xform_as_mvector(joints[-1])
+        start_plane = self.get_xform_as_mvector(start_joint)
+        end_plane = self.get_xform_as_mvector(end_joint)
 
         point_indices = self.all_points_in_geom(geom)[1]
         if use_existing_wts:
@@ -202,7 +205,7 @@ class Weights:
                                                                     point_vectors,
                                                                     start_plane,
                                                                     end_plane)
-        r_point_names = [f'{geom}.vtx[{idx}]' for idx in point_indices]
+        # r_point_names = [f'{geom}.vtx[{idx}]' for idx in point_indices]
 
         # Get the weight of the joint for every point in the mesh
         # start_wts = self.get_joint_allweights(skincluster, geom, joints[0])
@@ -217,23 +220,40 @@ class Weights:
                                                             pair_start,
                                                             pair_end)
             if not indices: continue
-            inherit_wts = []
-            inherit_wts = self.get_joint_weight_by_idx(skincluster, geom, 
-                                                                weight_joint, indices)
+            start_inherit_wts = []
+            start_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom, 
+                                                                start_wt_jnt, indices)
 
-            wt_start, wt_end = self.mix_values_between(p_vectors, pair_start, pair_end,
-                                                    inherited_weights=inherit_wts,
+            end_inherit_wts = self.get_joint_weight_by_idx(skincluster, geom, 
+                                                                end_wt_jnt, indices)
+
+            start_wt_start, start_wt_end = self.mix_values_between(p_vectors, pair_start, pair_end,
+                                                    inherited_weights=start_inherit_wts,
                                                     decimal_place=False
                                                     )
+            # end_wt_start, end_wt_end = self.mix_values_between(p_vectors, pair_start, pair_end,
+            #                                         inherited_weights=end_inherit_wts,
+            #                                         decimal_place=False
+            #                                         )
 
             point_names = [f'{geom}.vtx[{i}]' for i in indices]
+            if idx == 5:
+                print(f'{jnt_start}, {jnt_end}')
+                print(f'{jnt_start} weights start: ', start_wt_start)
+                print(f'{jnt_end} weights end: ', start_wt_end)
 
-            for maya_pt, s_wt, e_wt in zip(point_names, wt_start, wt_end):
-                if s_wt < .05 and e_wt < .05: continue
-                # set weights on start and end at the same time, to avoid breaking normalization.
-                cmds.skinPercent(skincluster, maya_pt, transformValue=[(jnt_start, e_wt), (jnt_end,s_wt)])
+            # for maya_pt, s_s_wt, s_e_wt, e_s_wt, e_e_wt in zip(point_names, start_wt_start, start_wt_end, end_wt_start, end_wt_end):
+            for maya_pt, s_s_wt, s_e_wt, in zip(point_names, start_wt_start, start_wt_end):
+                if s_s_wt > .05 and s_e_wt > .05:
+                    # set weights on start and end at the same time, to avoid breaking normalization.
+                    cmds.skinPercent(skincluster, maya_pt, transformValue=[(jnt_start, s_e_wt),
+                                                                        (jnt_end, s_s_wt)])
+                    
+                # if e_s_wt > .05 and e_e_wt > .05:
+                #     cmds.skinPercent(skincluster, maya_pt, transformValue=[(jnt_start, e_s_wt),
+                #                                                         (jnt_end, e_e_wt)])
 
-        return r_point_names
+        # return r_point_names
 
     def mix_values_between(self, point_vectors, start_point, end_point,
                            inherited_weights: list =[],
@@ -993,7 +1013,7 @@ def main():
     twist_weights.distribute_startend_weight(start_joint='RightArm',end_joint='RightForeArm',joints=up_arm_jnts)
 
     twist_weights.distribute_startend_weight(start_joint='RightForeArm',end_joint='RightHand',joints=lo_arm_jnts)
-    twist_weights.select_points_between_startend('Body_geo', 'RightForeArm_out_bind_tw05', 'RightForeArm_out_bind_tw06')
+    # twist_weights.select_points_between_startend('Body_geo', 'RightForeArm_out_bind_tw05', 'RightForeArm_out_bind_tw06')
 
     # Example of using the function
     # Assuming debug_dict is defined in your class

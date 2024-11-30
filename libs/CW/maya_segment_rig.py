@@ -3,7 +3,7 @@ import maya.api.OpenMaya as om
 
 
 class SegmentRig:
-    def __init__(self, start_jnt, end_jnt, rig_parent=None, skel_parent=None,
+    def __init__(self, start_jnt, end_jnt, rig_parent=None,
                  num_tw_jnts=5, jnt_suffix='tw'):
         '''
         Creates a twist segment joint chain between a start and end joint, with additional
@@ -31,14 +31,12 @@ class SegmentRig:
         self.start_jnt = start_jnt
         self.end_jnt = end_jnt
         self.rig_parent = rig_parent
-        self.start_skel_parent = skel_parent
         self.num_tw_jnts = num_tw_jnts
         self.jnt_suffix = jnt_suffix
         
-        
+        # Rig and joint naming
         base_name = self.start_jnt.replace('_rig', '')
         self.name = base_name
-
         self.jnt_name = f'{base_name}_joint'
         self.jnt_rig_name = f'{base_name}_rig'
         self.jnt_skel_name = base_name

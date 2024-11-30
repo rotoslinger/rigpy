@@ -3,7 +3,7 @@ import maya.api.OpenMaya as om
 
 
 class SegmentRig:
-    def __init__(self, start_jnt, end_jnt, rig_parent=None,
+    def __init__(self, start_jnt, end_jnt, rig_parent=None, skel_parent=None,
                  num_tw_jnts=5, jnt_suffix='tw'):
         '''
         Creates a twist segment joint chain between a start and end joint, with additional
@@ -31,8 +31,17 @@ class SegmentRig:
         self.start_jnt = start_jnt
         self.end_jnt = end_jnt
         self.rig_parent = rig_parent
+        self.start_skel_parent = skel_parent
         self.num_tw_jnts = num_tw_jnts
         self.jnt_suffix = jnt_suffix
+        
+        
+        base_name = self.start_jnt.replace('_rig', '')
+        self.name = base_name
+
+        self.jnt_name = f'{base_name}_joint'
+        self.jnt_rig_name = f'{base_name}_rig'
+        self.jnt_skel_name = base_name
 
     def run(self):
         self.__generate_lerp_weights()
@@ -53,18 +62,12 @@ class SegmentRig:
                             twist_jnt=self.tw_ik_start_jnt,
                             weights=[self.wt0, self.wt1])
 
-        # blend rotations for start tw
-        self.__blend_rotations([self.start_tw_buf_parent], 
-                            no_twist_jnt=self.no_tw_ik_start_jnt,
-                            twist_jnt=self.tw_ik_start_jnt,
-                            weights=[[1], [.0]])
         # blend rotations for end tw
         self.__blend_rotations([self.end_tw_buf_parent], 
                             no_twist_jnt=self.no_tw_ik_start_jnt,
                             twist_jnt=self.tw_ik_start_jnt,
                             weights=[[0.0], [1.0]])
         
-        cmds.pointConstraint(self.start_jnt, self.start_tw_buf_parent, mo=False)
         cmds.pointConstraint(self.end_jnt, self.end_tw_buf_parent, mo=False)
 
         # Attach chains and handles to start and end
@@ -75,17 +78,27 @@ class SegmentRig:
         self.__setup_stretch(start_jnt=self.tw_ik_start_jnt, end_goal=self.end_jnt,
                         stretch_jnts=self.tw_buf_parents, vector_weights=self.wt1)
         
-
-        self.twist_jnts = [self.start_tw_jnt] + self.between_twist_jnts + [self.end_tw_jnt]
+        self.twist_jnts = self.between_twist_jnts + [self.end_tw_jnt]
         self.twist_joints_out = []
-        for idx, jnt in enumerate(self.twist_jnts):
-            bind_jnt = cmds.createNode('joint', parent=self.start_jnt,
-                                    name=f'{self.start_jnt}_bind_{self.jnt_suffix}{idx:02}')
-            cmds.parentConstraint(jnt, bind_jnt, mo=False)
-            self.twist_joints_out.append(bind_jnt)
+
+        for idx, jnt in enumerate(self.twist_jnts):                      
+            # Create out joints
+            out_jnt = cmds.createNode('joint', parent=self.start_jnt,
+                                    name=f'{self.jnt_rig_name}_{self.jnt_suffix}{idx:02}')
+            cmds.parentConstraint(jnt, out_jnt, mo=False)
+            self.twist_joints_out.append(out_jnt)
 
         # cleanup
         self.__cleanup_rig()
+
+    def create_skel_joints(self, parent):
+        self.twist_joints_skel = []
+        for idx, jnt in enumerate(self.twist_jnts):
+            # Create skel joints (for bind)
+            skel_jnt = cmds.createNode('joint', parent=parent,
+                                    name=f'{self.jnt_skel_name}_{self.jnt_suffix}{idx:02}')
+            cmds.parentConstraint(jnt, skel_jnt, mo=False)
+            self.twist_joints_skel.append(skel_jnt)
 
     def __cleanup_rig(self):
         cleanup_objs = [self.tw_ik_handle,
@@ -101,37 +114,15 @@ class SegmentRig:
         cmds.scaleConstraint(driver, self.ik_joints_group, mo=True)
 
     def __create_parent_groups(self):
-        self.component_root = cmds.createNode('transform', name=f'{self.start_jnt}_segment_grp',
+        self.component_root = cmds.createNode('transform', name=f'{self.name}_segment_grp',
                                         parent=self.rig_parent)
-        self.ik_joints_group = cmds.createNode('transform', name=f'{self.start_jnt}_segment_ik_chains',
+        self.ik_joints_group = cmds.createNode('transform', name=f'{self.name}_segment_ik_chains',
                                         parent=self.component_root)
         cmds.setAttr(f'{self.component_root}.inheritsTransform', 0)
 
     def __create_joints(self):
         start_orient = self.__clone_jnt(self.start_jnt, 'tmp_jnt_name_DELETEME',
                                     parent=self.component_root, orient_only=True)[1]
-        self.start_tw_jnt = cmds.createNode('joint', parent=None,
-                                            name=f'{self.start_jnt}_{self.jnt_suffix}{0:02}')
-        end_num = self.num_tw_jnts + 1
-        self.end_tw_jnt = cmds.createNode('joint', parent=None,
-                                            name=f'{self.start_jnt}_{self.jnt_suffix}{end_num:02}')
-
-        cmds.setAttr(f'{self.start_tw_jnt}.jointOrient', *start_orient, type='double3')
-        cmds.setAttr(f'{self.end_tw_jnt}.jointOrient', *start_orient, type='double3')
-        self.start_tw_jnt = cmds.parent(self.start_tw_jnt, self.component_root)[0]
-        self.end_tw_jnt = cmds.parent(self.end_tw_jnt, self.component_root)[0]
-
-        start_tw_buffers = self.create_buffer(self.start_tw_jnt,
-                                              parent=self.component_root,
-                                              num_buffers=2)
-        self.start_tw_buf_parent = start_tw_buffers[0]
-        self.start_tw_buf_child = start_tw_buffers[1]
-
-        end_tw_buffers = self.create_buffer(self.end_tw_jnt,
-                                              parent=self.component_root,
-                                              num_buffers=2)
-        self.end_tw_buf_parent = end_tw_buffers[0]
-        self.end_tw_buf_child = end_tw_buffers[1]
 
         # No tw chain
         self.tw_ik_start_jnt = self.__clone_jnt(self.start_jnt,
@@ -153,15 +144,27 @@ class SegmentRig:
 
         # NOTE: positioning the joints is taken care of in self.setup_stretch connectAttrs
         for idx in range(self.num_tw_jnts):
-            counter = idx + 1
+            
             new_jnt = cmds.createNode('joint', parent=None,
-                                    name=f'{self.start_jnt}_{self.jnt_suffix}{counter:02}')
+                                    name=f'{self.jnt_name}_{self.jnt_suffix}{idx:02}')
             cmds.setAttr(f'{new_jnt}.jointOrient', *start_orient, type='double3')
             new_jnt = cmds.parent(new_jnt, self.component_root)[0]
             self.between_twist_jnts.append(new_jnt)
             buffers = self.create_buffer(new_jnt, parent=self.component_root, num_buffers=2)
             self.tw_buf_parents.append(buffers[0])
             self.tw_buf_children.append(buffers[1])
+        end_num = self.num_tw_jnts
+        self.end_tw_jnt = cmds.createNode('joint', parent=None,
+                                            name=f'{self.jnt_name}_{self.jnt_suffix}{end_num:02}')
+
+        cmds.setAttr(f'{self.end_tw_jnt}.jointOrient', *start_orient, type='double3')
+        self.end_tw_jnt = cmds.parent(self.end_tw_jnt, self.component_root)[0]
+        
+        end_tw_buffers = self.create_buffer(self.end_tw_jnt,
+                                              parent=self.component_root,
+                                              num_buffers=2)
+        self.end_tw_buf_parent = end_tw_buffers[0]
+        self.end_tw_buf_child = end_tw_buffers[1]
 
     def __generate_lerp_weights(self):
         # Hard coding start and end for now. In the future we may want to give them as args
@@ -245,7 +248,7 @@ class SegmentRig:
         :param list weights: weights to be used as normalized influences in the twist
                              orientConstraint
         '''
-        if not name: name=start_jnt
+        if not name: name=self.name
 
         handle, effector = cmds.ikHandle(startJoint=start_jnt, endEffector=end_jnt,
                                         sol=ik_type, name=f'{name}_seg{suffix}_hdl')

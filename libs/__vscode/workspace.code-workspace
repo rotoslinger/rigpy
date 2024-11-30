@@ -90,6 +90,7 @@
 			"pnts",
 			"propcmds",
 			"PYTHONPATH",
+			"retarget",
 			"rigbdp",
 			"rigbuild",
 			"rigmods",

@@ -1,4 +1,5 @@
 # builtins
+import traceback
 from functools import wraps
 
 # to only be run within the maya application
@@ -125,3 +126,24 @@ def print_bookends(func):
         print('###############################################################################################\n')
     return wrapper
 
+def auto_wrapper(method):
+    """Wrapper to log method calls and catch errors with traceback."""
+    def wrapped(*args, **kwargs):
+        try:
+            print(f"Calling: {method.__name__}")
+            result = method(*args, **kwargs)
+            print(f"Completed: {method.__name__}")
+            return result
+        except Exception as e:
+            print(f"Error in {method.__name__}: {e}")
+            traceback.print_exc()
+            raise  # Re-raise the exception to propagate it if needed
+    return wrapped
+
+# Dynamically wrap all methods
+def wrap_methods(cls):
+    for attr_name in dir(cls):
+        attr_value = getattr(cls, attr_name)
+        if callable(attr_value) and not attr_name.startswith("__"):
+            setattr(cls, attr_name, auto_wrapper(attr_value))
+    return cls

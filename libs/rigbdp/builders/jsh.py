@@ -18,7 +18,7 @@ for mod in MODULES:
 # Unique char args
 dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'jsh'
-version = 15
+version = 16
 #########################################################
 
 # If you don't have the directories, this will create them.
@@ -50,7 +50,6 @@ rig_merge = rigbuild_mini.RigMerge(
 
 )
 
-
 #--------------------------------------------------------
 
 # PRE. custom scripts can go here
@@ -80,15 +79,18 @@ rig_merge.import_correctives()
 # CUSTOM BLENDSHAPE CREATION because the body blendshape is driving all of the shirt blendshapes
 # we don't have to do a SHAPES build for it. This should become the standard for all clothing 
 # sculpts:
+
+
 geo_name='jsh_base_cloth_top_fabric_low_meshShape'
 cmds.blendShape(geo_name, name = 'M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
                 before=True)
-cmds.blendShape('M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
-                edit=True,
-                ip=r'C:\Users\harri\Documents\BDP\cha\jsh\maya_shapes\shirt.shp')
+# cmds.blendShape('M_jsh_base_cloth_top_fabric_low_geoShapes_blendShape',
+#                 edit=True,
+#                 ip=r'C:\Users\harri\Documents\BDP\cha\jsh\maya_shapes\shirt.shp')
 
-# 2a. custom scripts
-rig_mods.connect_common_blendshapes(char_name='jsh')
+
+# # 2a. custom scripts
+# rig_mods.connect_common_blendshapes(char_name='jsh')
 
 #--------------------------------------------------------
 
@@ -105,9 +107,6 @@ cmds.delete(['jsh_base_cloth_top_fabric_mesh', 'jsh_base_cloth_pants_fabric_mesh
 
 # Post build save
 cmds.file(save=True, type='mayaAscii')
-
-
-
 
 # # #################################### Helpful export snippets ###################################
 

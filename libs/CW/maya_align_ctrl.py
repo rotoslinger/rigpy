@@ -15,12 +15,11 @@ ALIGN_SCRIPT_NODE_CONTENT_PATH = os.path.join(
 # new_node_names the name of new nodes to be added 
 # parent_func_attrs where to parent the controls class/func instance attrs 
 
-def space_switcher(ctrl,
-                   make_names: list | None = None, # list of names to create xforms for
-                   make_parents: list | None = None, # where to parent the new xforms 
-                   space_dict: dict = {'World':'world_null',
-                                       'Chest':'Spine2',
-                                       }):
+def create_space_switch(ctrl,
+                        make_names: list | None = None, # list of names to create xforms for
+                        make_parents: list | None = None, # where to parent the new xforms 
+                        space_dict: dict = {'World':'world_null',
+                                            'Chest':'Spine2'}):
     '''
     creates new transforms for spaces and a space switch attribute for the specified control
     '''
@@ -30,8 +29,16 @@ def space_switcher(ctrl,
     if not cmds.objExists(f'{ctrl}.align'):
         cmds.addAttr(ctrl, longName='align', attributeType='enum',
                      enumName=enum_str, keyable=True)
+    if not cmds.objExists(f'{ctrl}.align_cur_state'):
+        cmds.addAttr(ctrl, longName='align_cur_state', attributeType='enum',
+                     enumName=enum_str, keyable=False, hidden=True)
 
     if make_names and make_parents:
         for name, parent in zip(make_names, make_parents):
             new_node = cmds.createNode('transform', name=name, parent=parent)
-            ws_matrix = cmds.xform(parent, matrix=True, ws=True)
+            ws_matrix = cmds.xform(parent, matrix=True, ws=True, query=True)
+            cmds.xform(new_node, matrix=ws_matrix, ws=True)
+            [cmds.setAttr(f'{new_node}.{attr}{axis}',
+                          lock=True) for attr in ('translate', 'rotate', 'scale') for axis in 'XYZ']
+            if 'world' in name:
+                cmds.setAttr(f'{new_node}.inheritsTransform', 0)

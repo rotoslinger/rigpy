@@ -119,7 +119,7 @@ class RigMerge:
         self.char_dir = char_dir
         self.body_geo = f'{self.char_name}_base_body_geo'
         self.__input_file_check()
-
+        self.envelopes = []
         # populate a list called self.corrective_meshes from the self.corrective_mel_paths
         self.__get_corrective_meshes_from_mel()
 
@@ -227,13 +227,22 @@ class RigMerge:
                                 hidden_in_outliner=False,
                                 skin_jnt_vis=False, sculpt_jnt_vis=False,
                                     attr_object=self.rig_vis_attr)
-        if self.wrap_eyebrows:
-            rig_utils.wrap_eyebrows()
 
         cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretch_ffd.envelope', 0)
         cmds.setAttr(f'{self.char_name}_base_body_geo_headSquashAndStretchGlobal_ffd.envelope', 0)
         if cmds.objExists("preferences.showClothes"):
             cmds.setAttr("preferences.showClothes", 1)
+
+        # # turn off all deformers before importing sculpts
+        # self.envelopes = []
+        # for node in cmds.ls():
+        #     if cmds.objExists(f'{node}.envelope'):
+        #         node_env = f'{node}.envelope'
+        #         env_val = cmds.getAttr(node_env)
+        #         if env_val == 0: continue
+        #         self.envelopes.append(node_env)
+        #         cmds.setAttr(node_env, 0)
+                
 
 
     def __minimo_post_corrective_overs(self):
@@ -244,6 +253,14 @@ class RigMerge:
         if cmds.objExists("preferences.showClothes"):
             cmds.setAttr("preferences.showClothes", 1)
 
+        # turn on all deformers after importing sculpts
+        # for node_env in self.envelopes:
+        #     if cmds.objExists(node_env):
+        #         cmds.setAttr(node_env, 1)
+        
+        # don't wrap eyebrows until everything is back on
+        if self.wrap_eyebrows:
+            rig_utils.wrap_eyebrows()
 
     def __nowake_post_corrective_overs(self):
         if self.bs_conn_paths:

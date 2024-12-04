@@ -346,8 +346,10 @@ def export_to_json(data, file_path=None, filename_prefix='',  suffix="MATRIX_CON
     # Create the full file name using the node name and suffix
     if not file_path:
         file_path = get_scene_dir()
+        print('getting file path')
     file_name = f"{filename_prefix}_{suffix}.json"
     full_file_path = os.path.join(file_path, file_name)
+    full_file_path = os.path.normpath(full_file_path)
 
     # Export the dictionary to a JSON file
     with open(full_file_path, 'w') as json_file:

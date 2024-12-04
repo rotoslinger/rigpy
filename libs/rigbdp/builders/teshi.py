@@ -19,7 +19,7 @@ for mod in MODULES:
 # Unique char args
 dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'teshi'
-version = 17
+version = 18
 #########################################################
 
 # If you don't have the directories, this will create them.
@@ -39,7 +39,7 @@ sdk_data_path = found_dirs['sdk_data_path']
 
 # Initialize your builder 
 rig_merge = rigbuild_mini.RigMerge(
-    char_name=char_name, 
+    char_name=char_name,
     input_rig_path=input_rig_path,
     SHAPES_mel_paths=SHAPES_mel_paths,
     build_output_path=build_output_path,

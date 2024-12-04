@@ -20,6 +20,8 @@ class AllyBook(prop.PropBuild):
                  rig_geo_files='',
                  output_path='',
                  radius='',
+                 guide_vis=False,
+                 ctrl_vis=True,
                  *args, **kwargs):
         # Pass arguments explicitly to the parent class
         super().__init__(name=name,
@@ -29,6 +31,8 @@ class AllyBook(prop.PropBuild):
                          rig_geo_files=rig_geo_files,
                          output_path=output_path,
                          radius=radius,
+                         guide_vis=guide_vis,
+                         ctrl_vis=ctrl_vis,
                          *args, **kwargs)
 
     def build_it(self):
@@ -80,6 +84,7 @@ class AllyBook(prop.PropBuild):
                                     joint_parent=l_page.joints[0],
 
                                     debug = True)
+                                    
         sun = prop_base.simple_component(side = 'L',
                                     parent_hook = sun_base.ctrls[0],
                                     associated_geos=[['polySurface9.f[543]', 'polySurface9.f[550]']],
@@ -92,14 +97,21 @@ class AllyBook(prop.PropBuild):
                                     joint_parent=l_page.joints[0],
 
                                     debug = True)
+        
+prop_rig = AllyBook(guide_vis=True,
+                    ctrl_vis=False)
+# attempt to export guides, just in case you have forgotten to.
+# this will probably bite us but whatever
+prop_rig.export_prop_build()
 
-
-prop_rig = AllyBook()
 prop_rig.create()
+prop_rig.import_prop_build()
 
+prop_rig.guides_world_space()
+prop_rig.guides_world_space(world_space=False)
 
-
-
+prop_rig.set_maintenance_defaults()
+prop_rig.finalize()
 
 # def create_std_rig(name = "allyBook_base_model_h"):
 #     rig_root = rig_hier.create_rig_hier(name=name, 

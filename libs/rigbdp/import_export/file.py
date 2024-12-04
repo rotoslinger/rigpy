@@ -42,6 +42,38 @@ def generate_timestamp():
     # Creating a timestamp in a human-readable format: YYYY-MM-DD_HH-MM-SS
     return "{0}-{1}-{2}_{3}-{4}-{5}".format(t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
 
+def backup_file_simple(file_path):
+    """
+    Creates a backup of the given file by appending an incrementing '_BAK_###' counter.
+    """
+    if not os.path.exists(file_path):
+        return
+
+    # Get the directory, base name, and extension of the file
+    dir_name, file_name = os.path.split(file_path)
+    base_name, ext = os.path.splitext(file_name)
+    
+    # List all files in the directory matching the backup pattern
+    existing_backups = [f for f in os.listdir(dir_name) if f.startswith(base_name + '_BAK_') and f.endswith(ext)]
+    
+    # Extract existing backup numbers
+    highest_count = 0
+    for backup in existing_backups:
+        parts = backup.split('_BAK_')
+        if len(parts) > 1 and parts[-1].replace(ext, '').isdigit():
+            highest_count = max(highest_count, int(parts[-1].replace(ext, '')))
+    
+    # Determine the next backup number
+    next_count = highest_count + 1
+    backup_name = f"{base_name}_BAK_{next_count:03d}{ext}"
+    backup_path = os.path.join(dir_name, backup_name)
+    
+    # Copy the file to the new backup path
+    with open(file_path, 'rb') as src, open(backup_path, 'wb') as dest:
+        dest.write(src.read())
+    
+    return backup_path
+
 
 def generate_backup_filename(filepath, filename, backup_dir_name='BAK'):
     filepath = os.path.normpath(f"{filepath}{DELIMITER}{backup_dir_name}")

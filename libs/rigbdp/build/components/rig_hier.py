@@ -48,6 +48,7 @@ class create_rig_hier():
     def __clean_import_file(self, filepath):
         initial_objects = set(cmds.ls(dag=True, shapes=False))
 
+        # i flag is import 
         cmds.file(filepath, i=True, namespace=":")
 
         # Flatten namespaces (remove them)
@@ -64,9 +65,10 @@ class create_rig_hier():
         if imported_objects and type(imported_objects[0]) == list: 
             imported_objects = imported_objects[0]
 
-        return imported_objects
-
-
+        # Find top-level transforms
+        top_level_transforms = [
+            obj for obj in imported_objects if not cmds.listRelatives(obj, parent=True)]
+        return top_level_transforms
 
     def __create_nodes(self):
         "Create and name rig transforms"

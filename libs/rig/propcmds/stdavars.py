@@ -166,7 +166,6 @@ class create_stdavar_ctrl():
                                                 create_buffer_shape=True,
                                                 create_joint = self.ctrls_with_bones[index],
                                                 )
-            print('CREATING BUFFER SIZE ATTRS')
             self.buffer_size_attrs.append(return_ctrl.shape_size_attr)
             self.ctrls.append(return_ctrl.ctl)
             self.ctrl_buffers.append(return_ctrl.buffers)

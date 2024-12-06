@@ -289,7 +289,6 @@ class simple_component():
                     # print("IS FLOATING AND CREATING WIRE DEFORMER")
             else:
                 parent = self.ctrls[index-1]  # ---Nested hierarchy
-                print("IS WORKING and not floating!!!")
 
             if index == 1:
                 lock_attrs = ["sx", "sy", "sz", "v"],
@@ -317,7 +316,6 @@ class simple_component():
                 cmds.move( x,y,z, return_ctrl.buffers_parent)
             if self.root_pos_offset != (0,0,0) and index==0:  # if no chained, make sure to still do the root! (if not nuetral)
                 cmds.move( tmp_x, tmp_y,tmp_z, return_ctrl.buffers_parent, worldSpace=True)
-                print("MOVING OFFSET ")
             if index == 0:
                 cmds.setAttr(return_ctrl.buffers_parent + ".rx", rx)
                 cmds.setAttr(return_ctrl.buffers_parent + ".ry", ry)

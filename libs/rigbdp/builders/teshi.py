@@ -1,7 +1,7 @@
 #######################################
 # DYNAMIC GEN
 import importlib
-#from maya import cmds, mel
+from maya import cmds, mel
 
 from rigbdp.build import build_utils as rig_utils
 from rigbdp.import_export import sdk_utils, corrective
@@ -19,7 +19,7 @@ for mod in MODULES:
 # Unique char args
 dir_to_char = r'C:\Users\harri\Documents\BDP\cha'
 char_name = 'teshi'
-version = 18
+version = 19
 #########################################################
 
 # If you don't have the directories, this will create them.
@@ -35,7 +35,8 @@ input_rig_path = found_dirs['input_rig_path']
 SHAPES_mel_paths = found_dirs['SHAPES_mel_paths']
 build_output_path = found_dirs['build_output_path']
 sdk_data_path = found_dirs['sdk_data_path']
-
+char_dir = found_dirs['char_dir']
+extra_models = found_dirs['extra_models']
 
 # Initialize your builder 
 rig_merge = rigbuild_mini.RigMerge(
@@ -45,22 +46,38 @@ rig_merge = rigbuild_mini.RigMerge(
     build_output_path=build_output_path,
     sdk_data_path=sdk_data_path,
     wrap_eyebrows=True,
-)
+    extra_geo_importpath=extra_models,
+    char_dir=char_dir,
 
+)
 
 # 1. Create a new scene, Import the MnM rig build
 rig_merge.add_vendor_rig()
+
+rig_merge.smart_skin_copy('teshi_base_cloth_top_fabric_mesh',
+                          'teshi_base_cloth_top_fabric_low_mesh',
+                          'teshi_base_cloth_top_fabric_mesh_bodyMechanics_skinCluster')
+cmds.connectAttr('preferences.showClothes','teshi_base_cloth_low_grp.v')
 
 # --- pre corrective import scripts
 
 # 2. Import correctives
 rig_merge.import_correctives()
 
+geo_name='teshi_base_cloth_top_fabric_low_meshShape'
+cmds.blendShape(geo_name, name = 'M_teshi_base_cloth_top_fabric_low_geoShapes_blendShape',
+                before=True)
+
+
 # --- pre sdk scripts
 
 # 3.  Import and rebuild set driven key data teshi doesn't have any custom sdks
 # rig_merge.import_sdk_data()
 
+cmds.delete(['teshi_base_cloth_top_fabric_mesh'])
+
+# Post build save
+cmds.file(save=True, type='mayaAscii')
 
 
 # # #################################### Helpful export snippets ###################################

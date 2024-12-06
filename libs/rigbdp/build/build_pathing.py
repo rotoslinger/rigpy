@@ -3,6 +3,8 @@ from functools import wraps
 
 from rigbdp.builders.rigmods import utils as builder_utils
 
+SEP = os.path.sep
+
 
 def print_bookends(func):
     """
@@ -15,6 +17,14 @@ def print_bookends(func):
         print('####################################################################################################\n')
     return wrapper
 
+
+    # Return a dictionary with the paths of the created directories
+    return return_dict
+def create_build_path_verbose(path):
+    if not os.path.exists(path): 
+        os.makedirs(path, exist_ok=True)  # Create the character base directory
+        print(f'Path created: {path}')
+    else: print(f'Path already exists: {path}')
 
 
 def create_char_path_verbose(path):
@@ -109,6 +119,7 @@ def find_files(char_name, dir_to_char, new_version_number,
 
     print('# Copy these paths to your builder')
     builder_utils.print_dict_as_code(return_dict)
+
     # Return a dictionary with all found file paths
     return return_dict
 
@@ -145,9 +156,14 @@ def return_found_files(char_name, dir_to_char, new_version_number):
     SHAPES_mel_paths = glob.glob(f'{SHAPES_dir}*{SHAPES_extension}')
     bs_connection_maps = glob.glob(f"{input_dir}BsConnMap_*")
     extra_models = glob.glob(f'{extra_models_dir}*.mb')
+    if not extra_models: glob.glob(f'{extra_models_dir}*.ma')
+
     # Construct output filename based on character name and version
     output_filename = f'{char_name}_RIG_200_v{new_version_number:03}.ma'
     build_output_path = f'{output_dir}{output_filename}'
+
+    print(f'Extra models {extra_models}')
+
 
     # Path for sdk data file
     sdk_data_path = rf'{input_dir}{sdk_filename}'
@@ -164,7 +180,82 @@ def return_found_files(char_name, dir_to_char, new_version_number):
     # Return a dictionary with all found file paths
     return return_dict
 
+def create_prop_structure(prop_name, dir_to_prop, ):
+    """
+    Creates the necessary directory structure for the character, but does not create any files.
 
+    Args:
+        dir_to_prop (str): The base directory where the prop structure should be created.
+        prop_name (str): The prop name, which will be used to create subdirectories for that prop.
+
+    Returns:
+        dict: Dictionary with paths of created directories for the prop.
+    """
+    sep = os.path.sep
+    
+    # Construct base paths
+    prop_base_dir = rf'{dir_to_prop}{sep}{prop_name}{sep}'  # For example: C:\Users\harri\Documents\BDP\cha\jsh\
+    weights_dir = rf'{prop_base_dir}weights{sep}'  # SHAPES directory for storing MEL files
+    guides_dir = rf'{prop_base_dir}guides{sep}'  # Output directory for output files
+    model_dir = rf'{prop_base_dir}model{sep}'  # Output directory for output files
+    sdk_dir = rf'{prop_base_dir}sdk{sep}'  # Output directory for output files
+    
+    # Create the directories if they don't already exist
+    create_build_path_verbose(prop_base_dir)  # Create the character base directory
+    create_build_path_verbose(weights_dir)  # Create weights directory
+    create_build_path_verbose(guides_dir)  # Create guides directory
+    create_build_path_verbose(model_dir)  # Create model directory
+    create_build_path_verbose(sdk_dir)  # Create sdk directory
+
+    return_dict = {'prop_base_dir': prop_base_dir,
+                   'weights_dir': weights_dir,
+                   'guides_dir': guides_dir,
+                   'model_dir': model_dir,
+                   'sdk_dir': sdk_dir
+                   }
+
+    return return_dict
+
+def return_found_prop_files(prop_name, dir_to_prop):
+    """
+    Finds specific files based on extensions in a character's directory structure.
+
+    Args:
+        prop_name (str): name of the prop.
+        dir_to_prop (str): path to the prop.
+
+    Returns:
+        dict: Dictionary with full paths to files needed to build props.
+    """
+    
+    # Constructing the dynamic character directory and other subdirectories
+    dir_to_prop = rf'{dir_to_prop}{SEP}{prop_name}{SEP}'
+    weights_dir = rf'{dir_to_prop}weights{SEP}'
+    guides_dir = rf'{dir_to_prop}guides{SEP}'
+    model_dir = rf'{dir_to_prop}model{SEP}'
+    sdk_dir = rf'{dir_to_prop}sdk{SEP}'
+    
+    # Find all files with the specified MnM and SHAPES extensions in their directories
+    model = glob.glob(f'{model_dir}*.ma')
+    if not model: model= glob.glob(f'{model_dir}*.mb')
+    
+    weights_files = glob.glob(f'{weights_dir}*json')
+    guides_files = glob.glob(f'{guides_dir}*json')
+    sdk_file = glob.glob(f'{sdk_dir}*json')
+    # Construct output filename based on character name and version
+    
+    return_dict = {
+                   'model_file': model[0] if model else None,
+                   'weights_files': weights_files,
+                   'guides_files': guides_files,
+                   'sdk_file': sdk_file[0] if sdk_file else None,
+                   }
+    
+    # Return a dictionary with all found file paths
+    return return_dict
+
+def mayaify_path(path):
+    return path.replace('\\', '/')
 
 # Example usage
 # char_name = 'jsh'

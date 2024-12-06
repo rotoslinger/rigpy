@@ -1,4 +1,5 @@
 from importlib import reload
+import inspect
 from rigbdp.build.components import rig_hier
 from rig.propcmds import stdavars
 from rig.propcmds.OLD_components import prop_singleton
@@ -16,11 +17,23 @@ class AllyBookmark(prop.PropBuild):
                  version=1,
                  props_path=r'C:\Users\harri\Documents\BDP\props',
                  model_file='allyBookmark_base_model_h_v004.mb',
-                 rig_geo_file='',
-                 build_output_path='',
+                 rig_geo_files='',
+                 output_path='',
+                 radius='',
+                 guide_vis=True,
+                 ctrl_vis=False,
                  *args, **kwargs):
         # Call the parent class constructor
-        super().__init__(*args, **kwargs)
+        super().__init__(name=name,
+                         version=version,
+                         props_path=props_path,
+                         model_file=model_file,
+                         rig_geo_files=rig_geo_files,
+                         output_path=output_path,
+                         radius=radius,
+                         guide_vis=guide_vis,
+                         ctrl_vis=ctrl_vis,
+                         *args, **kwargs)
 
     def build_it(self):
         l_page = prop_base.simple_component(side = 'C',
@@ -40,3 +53,17 @@ class AllyBookmark(prop.PropBuild):
         counter = 1 
 prop_rig = AllyBookmark()
 
+# attempt to export guides, just in case you have forgotten to.
+# this will probably bite us but whatever
+prop_rig.export_prop_build()
+
+prop_rig.create()
+prop_rig.import_prop_build()
+
+# prop_rig.skincluster_on_off(on=False)
+
+prop_rig.guides_world_space()
+prop_rig.guides_world_space(world_space=False)
+
+prop_rig.set_maintenance_defaults()
+# prop_rig.finalize()

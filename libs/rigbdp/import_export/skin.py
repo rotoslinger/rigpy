@@ -504,30 +504,18 @@ def smart_copy_skinweights(source_mesh, target_mesh,
                            filepath=r'C:\Users\harri\Documents\BDP\cha\jsh\input'):
     if not skin_clusters:
         skin_clusters = get_skinclusters_on_mesh(source_mesh)
-    # print('GEOMS', source_mesh)
-    # print('SKINCLUSTERS ', skin_clusters)
     src_skin_influences = {}
     src_connection_maps = {}
     target_skinclusters = []
 
-    target_connection_maps = {}
     for idx, source_skincluster in enumerate(skin_clusters):
         # try:
         map = locking.get_compound_attr_connect_map(node = source_skincluster, compound_attr='matrix')
-        locking.export_to_json(map, filename_prefix=source_skincluster,
-                               file_path=filepath, suffix='CONNECTION_MAP')
-
         src_connection_maps[f'{source_skincluster}_MAP'] = map
         locking.connect_skin_joints(map, source_skincluster)
         influences = cmds.skinCluster(source_skincluster, query=True, influence=True)
         src_skin_influences[source_skincluster]=influences
-        # except Exception as e:
-        #     print('ERROR : ', e)
-        #     influences = cmds.skinCluster(source_skincluster, query=True, influence=True)
-        #     skin_influence_map[source_skincluster]=influences
-    # target_skin_influence_map = replace_keys_with_string(src_skin_influence_map, source_mesh, target_mesh)
     for source_skincluster in src_skin_influences:
-        # print(f'skincluster: {source_skincluster}\ninfluences: {skin_influence_map[source_skincluster]}')
         skincluster_new_name = source_skincluster.replace(source_mesh, target_mesh)
         target_skinclusters.append(skincluster_new_name)
 
@@ -538,22 +526,15 @@ def smart_copy_skinweights(source_mesh, target_mesh,
                                                   toSelectedBones=True,
                                                   multi=True,
                                                   name=skincluster_new_name)[0]
-        # print('INFLUENCES ',skin_influence_map[source_skincluster])
-        # print('COPYING FOR ',source_skincluster)
         cmds.copySkinWeights(sourceSkin=source_skincluster,
                                 destinationSkin=skincluster_new_name,
                                 noMirror=True,
                                 influenceAssociation=['label', 'name', 'oneToOne'] # "oneToOne" 'label'
                                 )
-    
 
     for idx, source_skincluster in enumerate(skin_clusters):
-        json_data = locking.import_json_conn_map(file_path=filepath, filename_prefix=source_skincluster, suffix="CONNECTION_MAP")
-        locking.connect_matrix_mults(connection_map=json_data, skincluster_name=source_skincluster)
-
-        new_json_data = replace_keys_and_values_in_nested_dict(json_data, source_mesh, target_mesh)
-
-        # print(json.dumps(new_json_data, indent=4))
-        locking.connect_matrix_mults(connection_map=new_json_data, skincluster_name=target_skinclusters[idx], debug=False)
-        # print('Connected new Matrix mults', skincluster_new_name)
+        connection_map = src_connection_maps[f'{source_skincluster}_MAP']
+        locking.connect_matrix_mults(connection_map=connection_map, skincluster_name=source_skincluster)
+        new_connection_map = replace_keys_and_values_in_nested_dict(connection_map, source_mesh, target_mesh)
+        locking.connect_matrix_mults(connection_map=new_connection_map, skincluster_name=target_skinclusters[idx], debug=False)
 

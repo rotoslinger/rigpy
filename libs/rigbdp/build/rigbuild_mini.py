@@ -216,9 +216,9 @@ class RigMerge:
     def smart_skin_copy(self, copy_from_geo='', copy_to_geo='', skincluster = ''):
         # primarily for copying clothing.  I am going to hardcode the body to be what weights are
         # copied from
-        skin.smart_copy_skinweights(copy_from_geo, copy_to_geo,
-                        skin_clusters=[skincluster],
-                        filepath=self.char_dir)
+        skin.smart_copy_skinweights(copy_from_geo,
+                                    copy_to_geo,
+                                    skin_clusters=[skincluster])
 
     def __minimo_add_vendor_overs(self):
         if self.nowake_build:return

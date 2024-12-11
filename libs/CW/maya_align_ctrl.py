@@ -60,7 +60,10 @@ def create_space_switch(ctrl,
             if 'world' in name:
                 cmds.setAttr(f'{new_node}.inheritsTransform', 0)
 
-    constraints = cmds.listConnections(ctrl, type="constraint", source=True, destination=False)
+    # TODO: buffer in place will change the hierarchy.
+    # If the ctrl is being stored as a full path in the class you will have to update the ctrl dict!
+    # Make sure to check this and update the dictionary if it is needed
+    ctrl_group = buffer_in_place(ctrl, f'{ctrl}_group')
 
 
 def add_storage_attrs(ctrl, attr_name='cur_rotate'):
